@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: sangdari
+  datasource:
+    url: ${SPRING_DB_URL}
+    username: ${SPRING_DB_USERNAME}
+    password: ${SPRING_DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*Mapper.xml
+  type-aliases-package: com.maplog
+  configuration:
+    map-underscore-to-camel-case: true
+
+logging:
+  level:
+    com.example.project.mapper: debug
