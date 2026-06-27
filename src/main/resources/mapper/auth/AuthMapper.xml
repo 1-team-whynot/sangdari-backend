@@ -15,4 +15,23 @@
         WHERE
             user_id = #{userId}
     </update>
+
+    <insert
+        id="insertUser"
+        parameterType="com.sangdari.domain.user.entities.User"
+        useGeneratedKeys="true"
+        keyProperty="userId"
+    >
+        INSERT INTO users(
+            email
+            , password
+            , name
+            , phone
+        ) VALUES (
+            #{email}
+            , #{password}
+            , #{name}
+            , #{phone}
+        )
+    </insert>
 </mapper>

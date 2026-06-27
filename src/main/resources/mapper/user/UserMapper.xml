@@ -33,4 +33,13 @@
                 email = #{email}
             AND deleted_at IS NULL
     </select>
+
+    <select id="findByPhone" resultMap="userResultMap">
+        SELECT
+        *
+        FROM users
+        WHERE
+                phone = #{phone}
+            AND deleted_at IS NULL
+    </select>
 </mapper>

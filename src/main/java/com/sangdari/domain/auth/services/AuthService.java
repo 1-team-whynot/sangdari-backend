@@ -2,12 +2,12 @@ package com.sangdari.domain.auth.services;
 
 import com.sangdari.domain.auth.mapper.AuthMapper;
 import com.sangdari.domain.auth.requests.LoginRequest;
+import com.sangdari.domain.auth.requests.SignupRequest;
 import com.sangdari.domain.auth.responses.AuthResponse;
 import com.sangdari.domain.user.entities.User;
 import com.sangdari.domain.user.mapper.UserMapper;
 import com.sangdari.domain.user.responses.UserResponse;
-import com.sangdari.global.exception.custom.AuthLoginFailedException;
-import com.sangdari.global.exception.custom.InvalidTokenException;
+import com.sangdari.global.exception.custom.*;
 import com.sangdari.global.security.cookie.CookieManager;
 import com.sangdari.global.security.jwt.JwtConfig;
 import com.sangdari.global.security.jwt.JwtProvider;
@@ -95,5 +95,37 @@ public class AuthService {
                     .build()
             )
             .build();
+    }
+
+    // 회원가입
+    @Transactional(rollbackFor = Exception.class)
+    public void signup(SignupRequest signupRequest) {
+        User userEmail = userMapper.findByEmail(signupRequest.email());
+        User userPhone = userMapper.findByPhone(signupRequest.phone());
+
+        if (userEmail != null) {
+            throw new UserEmailDuplicatedException();
+        }
+
+        if(!signupRequest.password().equals(signupRequest.passwordChk())){
+            throw new UserPasswordMismatchException();
+        }
+
+        if (userPhone != null) {
+            throw new UserPhoneDuplicatedException();
+        }
+
+        User newUser = User.builder()
+            .email(signupRequest.email())
+            .password(passwordEncoder.encode(signupRequest.password()))
+            .name(signupRequest.name())
+            .phone(signupRequest.phone())
+            .build();
+
+        authMapper.insertUser(newUser);
+    }
+
+    public boolean checkEmail(String email) {
+        return userMapper.findByEmail(email) == null;
     }
 }
