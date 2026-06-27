@@ -14,18 +14,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api")
 public class StoreController {
-//    private final
+    private final StoreService storeService;
 
     // 필터링한 업체 목록 데이터
     @GetMapping("/stores")
     public ResponseEntity<GlobalRes<StoreListRes>> storeList(StoreListReq storeListReq) {
 
-//        StoreListRes storeListRes = StoreService.class
+       StoreListRes storeListRes = storeService.storeList(storeListReq);
 
         return  ResponseEntity.status(200).body(
                 GlobalRes.<StoreListRes>builder()
                         .code("00")
                         .message("정상처리")
+                        .data(storeListRes)
                         .build()
         );
     }

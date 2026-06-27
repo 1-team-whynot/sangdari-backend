@@ -2,10 +2,11 @@ package com.sangdari.domain.store.requests;
 
 import jakarta.validation.constraints.*;
 
-import java.lang.reflect.Array;
 import java.util.List;
 
 public record StoreListReq(
+
+        // filterParams
         @NotNull(message = "지역 정보는 필수입니다.")
         @Min(value = 1, message = "1 이상 숫자만 허용합니다.")
         Integer regionId,
@@ -32,7 +33,16 @@ public record StoreListReq(
         List<String> selectedCategories,
 
         @NotNull(message = "전기 이용 가능 여부를 선택해주세요.")
-        Boolean isPowerAvailable
+        Boolean isPowerAvailable,
+
+        // 페이지네이션 처리 위한 파라미터
+        @NotNull(message = "페이지 번호는 필수입니다.")
+        @Min(value = 1, message = "페이지 번호는 1 이상이어야 합니다.")
+        Integer page,
+
+        @NotNull(message = "페이지당 출력 개수는 필수입니다.")
+        @Min(value = 1, message = "출력 개수는 1 이상이어야 합니다.")
+        Integer limit
 ) {
     // minHeadcount보다 maxHeadcount가 더 커야 함
     // @AssertTrue: 이 메소드나 필드의 결과가 반드시 true여야 한다
@@ -42,5 +52,13 @@ public record StoreListReq(
             return true;
         }
         return maxHeadcount >= minHeadcount;
+    }
+
+    // 쿼리에서 사용할 offset 구하기
+    public int getOffset() {
+        if (this.page == null || this.limit == null) {
+            return 0;
+        }
+        return (this.page - 1) * this.limit;
     }
 }
