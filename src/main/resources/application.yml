@@ -38,5 +38,7 @@ security:
     reissue-uri: ${SECURITY_JWT_REISSUE_URI}
 
 logging:
+  file:
+    name: logs/error.log
   level:
     com.example.project.mapper: debug
