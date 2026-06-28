@@ -15,5 +15,5 @@ public class Stores {
     private Integer maxHeadcount;
     private Boolean isBatterySupported;
 
-    private String foodCategoryName;
+    private String foodCategoryNames;
 }

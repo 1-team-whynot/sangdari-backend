@@ -1,5 +1,7 @@
 package com.sangdari.domain.store.controller;
 
+import com.sangdari.domain.store.mapper.StoreMapper;
+import com.sangdari.domain.store.requests.AllStoreListReq;
 import com.sangdari.domain.store.requests.StoreListReq;
 import com.sangdari.domain.store.responses.StoreListRes;
 import com.sangdari.domain.store.services.StoreService;
@@ -15,6 +17,21 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api")
 public class StoreController {
     private final StoreService storeService;
+
+    // 전체 업체 목록 데이터
+    @GetMapping("allStores")
+    public ResponseEntity<GlobalRes<StoreListRes>> allStoreList(AllStoreListReq allStoreListReq) {
+
+        StoreListRes storeListRes = storeService.allStoreList(allStoreListReq);
+
+        return  ResponseEntity.status(200).body(
+                GlobalRes.<StoreListRes>builder()
+                        .code("00")
+                        .message("정상처리")
+                        .data(storeListRes)
+                        .build()
+        );
+    }
 
     // 필터링한 업체 목록 데이터
     @GetMapping("/stores")

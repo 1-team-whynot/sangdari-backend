@@ -9,10 +9,10 @@ public record StoreItems(
         , String imageUrl
         , String businessName
         , String storeDesc
-        , String name
         , String addrBase
         , Integer minHeadcount
         , Integer maxHeadcount
         , Boolean isBatterySupported
+        , String foodCategoryNames
 ) {
 }
