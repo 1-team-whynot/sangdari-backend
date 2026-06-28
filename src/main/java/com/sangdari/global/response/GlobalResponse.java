@@ -1,4 +1,4 @@
-package com.sangdari.global.responses;
+package com.sangdari.global.response;
 
 import lombok.Builder;
 import lombok.Getter;
