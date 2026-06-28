@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.sangdari.domain.payment.mappers.PaymentMapper">
+    <resultMap id="PaymentReadyInfoMap" type="com.sangdari.domain.payment.entities.PaymentReadyInfo">
+        <id column="reservation_id" property="reservationId"/>
+        <result column="user_id" property="userId"/>
+        <result column="reservation_status" property="reservationStatus"/>
+        <result column="customer_name" property="customerName"/>
+        <result column="customer_email" property="customerEmail"/>
+        <result column="quoted_price" property="quotedPrice"/>
+        <result column="discount_price" property="discountPrice"/>
+        <result column="payable_amount" property="payableAmount"/>
+    </resultMap>
+
+    <resultMap id="PaymentResultMap" type="com.sangdari.domain.payment.entities.Payment">
+        <id column="payment_id" property="paymentId"/>
+        <result column="reservation_id" property="reservationId"/>
+        <result column="user_id" property="userId"/>
+
+        <result column="payment_key" property="paymentKey"/>
+        <result column="order_id" property="orderId"/>
+        <result column="order_name" property="orderName"/>
+
+        <result column="payment_type" property="paymentType"/>
+        <result column="method" property="method"/>
+        <result column="status" property="status"/>
+
+        <result column="total_amount" property="totalAmount"/>
+        <result column="balance_amount" property="balanceAmount"/>
+        <result column="platform_fee" property="platformFee"/>
+
+        <result column="last_transaction_key" property="lastTransactionKey"/>
+        <result column="is_partial_cancelable" property="isPartialCancelable"/>
+
+        <result column="requested_at" property="requestedAt"/>
+        <result column="approved_at" property="approvedAt"/>
+
+        <result column="receipt_url" property="receiptUrl"/>
+        <result column="failure_code" property="failureCode"/>
+        <result column="failure_message" property="failureMessage"/>
+
+        <result column="raw_response" property="rawResponse"/>
+
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="deleted_at" property="deletedAt"/>
+    </resultMap>
+
+    <select id="findPaymentReadyInfoForUpdate" resultMap="PaymentReadyInfoMap">
+        SELECT
+            r.reservation_id,
+            r.user_id,
+            r.status AS reservation_status,
+            u.name AS customer_name,
+            u.email AS customer_email,
+            r.quoted_price,
+            r.discount_price,
+            COALESCE(NULLIF(r.discount_price, 0), r.quoted_price) AS payable_amount
+        FROM reservations r
+                JOIN users u
+                ON r.user_id = u.user_id
+        WHERE
+            r.reservation_id = #{reservationId}
+            AND r.deleted_at IS NULL
+            AND u.deleted_at IS NULL
+        FOR UPDATE
+    </select>
+
+    <select id="existsDonePayment" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM payments
+            WHERE
+                reservation_id = #{reservationId}
+            AND payment_type = #{paymentType}
+            AND status = 'DONE'
+            AND deleted_at IS NULL
+        )
+    </select>
+
+    <insert id="insertReadyPayment"
+            parameterType="com.sangdari.domain.payment.entities.Payment"
+            useGeneratedKeys="true"
+            keyProperty="paymentId">
+        INSERT INTO payments (
+        reservation_id,
+        user_id,
+        order_id,
+        order_name,
+        payment_type,
+        status,
+        total_amount,
+        balance_amount,
+        platform_fee,
+        requested_at
+        ) VALUES (
+        #{reservationId},
+        #{userId},
+        #{orderId},
+        #{orderName},
+        #{paymentType},
+        #{status},
+        #{totalAmount},
+        #{balanceAmount},
+        #{platformFee},
+        #{requestedAt}
+        )
+    </insert>
+
+    <select id="findPaymentByOrderIdForUpdate" resultMap="PaymentResultMap">
+        SELECT
+            payment_id,
+            reservation_id,
+            user_id,
+            payment_key,
+            order_id,
+            order_name,
+            payment_type,
+            method,
+            status,
+            total_amount,
+            balance_amount,
+            platform_fee,
+            last_transaction_key,
+            is_partial_cancelable,
+            requested_at,
+            approved_at,
+            receipt_url,
+            failure_code,
+            failure_message,
+            raw_response,
+            created_at,
+            updated_at,
+            deleted_at
+        FROM payments
+        WHERE order_id = #{orderId}
+          AND deleted_at IS NULL
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
+    <update id="updatePaymentDone"
+            parameterType="com.sangdari.domain.payment.entities.Payment">
+        UPDATE payments
+        SET
+            payment_key = #{paymentKey},
+            method = #{method},
+            status = #{status},
+            balance_amount = #{balanceAmount},
+            last_transaction_key = #{lastTransactionKey},
+            is_partial_cancelable = #{isPartialCancelable},
+            requested_at = #{requestedAt},
+            approved_at = #{approvedAt},
+            receipt_url = #{receiptUrl},
+            raw_response = #{rawResponse},
+            failure_code = NULL,
+            failure_message = NULL,
+            updated_at = NOW()
+        WHERE payment_id = #{paymentId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="updatePaymentFailed"
+            parameterType="com.sangdari.domain.payment.entities.Payment">
+        UPDATE payments
+        SET
+            status = #{status},
+            failure_code = #{failureCode},
+            failure_message = #{failureMessage},
+            updated_at = NOW()
+        WHERE payment_id = #{paymentId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="updateReservationStatus">
+        UPDATE reservations
+        SET
+            status = #{status},
+            updated_at = NOW()
+        WHERE reservation_id = #{reservationId}
+          AND deleted_at IS NULL
+    </update>
+
+    <select id="findCompletedDepositAmount" resultType="java.lang.Long">
+        SELECT total_amount
+        FROM payments
+        WHERE reservation_id = #{reservationId}
+          AND payment_type = 'DEPOSIT'
+          AND status = 'DONE'
+          AND deleted_at IS NULL
+        ORDER BY payment_id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findByOrderId" resultMap="PaymentResultMap">
+        SELECT *
+        FROM payments
+        WHERE order_id = #{orderId}
+          AND deleted_at IS NULL
+    </select>
+
+    <select id="findById" resultMap="PaymentResultMap">
+        SELECT *
+        FROM payments
+        WHERE payment_id = #{paymentId}
+          AND deleted_at IS NULL
+    </select>
+
+    <update id="updateTossSuccess">
+        UPDATE payments
+        SET payment_key = #{paymentKey},
+            method = #{method},
+            status = #{status},
+            total_amount = #{totalAmount},
+            balance_amount = #{balanceAmount},
+            receipt_url = #{receiptUrl},
+            approved_at = #{approvedAt},
+            updated_at = NOW()
+        WHERE payment_id = #{paymentId}
+          AND deleted_at IS NULL
+    </update>
+
+    </mapper>
