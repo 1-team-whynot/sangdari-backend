@@ -46,7 +46,7 @@ public class AuthController {
         );
     }
 
-    @PostMapping("/user/signup")
+    @PostMapping("/users/signup")
     public ResponseEntity<GlobalResponse<String>> signup(
             @Valid @RequestBody SignupRequest signupRequest
     ) {
