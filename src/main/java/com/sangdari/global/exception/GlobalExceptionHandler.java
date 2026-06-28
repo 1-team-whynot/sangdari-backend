@@ -42,12 +42,12 @@ public class GlobalExceptionHandler {
             AuthLoginRequiredException exception
     ) {
         return ResponseEntity
-            .status(HttpStatus.UNAUTHORIZED)
-            .body(GlobalResponse.<String>builder()
-                .code("E20")
-                .message("AUTH_LOGIN_REQUIRED")
-                .data(exception.getMessage())
-                .build());
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(GlobalResponse.<String>builder()
+                    .code("E20")
+                    .message("AUTH_LOGIN_REQUIRED")
+                    .data(exception.getMessage())
+                    .build());
     }
 
     @ExceptionHandler(AuthLoginFailedException.class)
@@ -63,9 +63,9 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(InvalidTokenException.class)
-    public ResponseEntity<GlobalResponse<String>> invalidTokenHandle(
-            AuthLoginFailedException exception
+    @ExceptionHandler(AuthTokenExpiredException.class)
+    public ResponseEntity<GlobalResponse<String>> authTokenExpiredHandle(
+            AuthTokenExpiredException exception
     ) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
             GlobalResponse.<String>builder()

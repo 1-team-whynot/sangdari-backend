@@ -6,10 +6,8 @@ import lombok.Builder;
 public record UserResponse(
         long userId
         , String email
-        , String password
         , String name
         , String phone
-        , String refreshToken
         , String createdAt
 ) {
 }

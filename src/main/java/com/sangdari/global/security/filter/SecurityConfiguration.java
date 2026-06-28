@@ -76,7 +76,12 @@ public class SecurityConfiguration {
             .cors(cors -> cors.configurationSource(this.corsConfigurationSource()))
             .addFilterBefore(tokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(req ->
-                req.anyRequest().permitAll()
+                req.requestMatchers(HttpMethod.GET, SecurityUrlRegistry.AUTH_REQUIRED_GET_URLS).authenticated()
+                    .requestMatchers(HttpMethod.POST, SecurityUrlRegistry.AUTH_REQUIRED_POST_URLS).authenticated()
+                    .requestMatchers(HttpMethod.PUT, SecurityUrlRegistry.AUTH_REQUIRED_PUT_URLS).authenticated()
+                    .requestMatchers(HttpMethod.PATCH, SecurityUrlRegistry.AUTH_REQUIRED_PATCH_URLS).authenticated()
+                    .requestMatchers(HttpMethod.DELETE, SecurityUrlRegistry.AUTH_REQUIRED_DELETE_URLS).authenticated()
+                    .anyRequest().permitAll() // 그 외는 인증 불필요
             )
             .exceptionHandling(e ->
                 e.authenticationEntryPoint(securityExceptionHandler)
