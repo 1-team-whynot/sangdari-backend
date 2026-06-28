@@ -7,7 +7,7 @@ import com.sangdari.domain.user.entities.User;
 import com.sangdari.domain.user.mapper.UserMapper;
 import com.sangdari.domain.user.responses.UserResponse;
 import com.sangdari.global.exception.custom.AuthLoginFailedException;
-import com.sangdari.global.exception.custom.InvalidTokenException;
+import com.sangdari.global.exception.custom.AuthTokenExpiredException;
 import com.sangdari.global.security.cookie.CookieManager;
 import com.sangdari.global.security.jwt.JwtConfig;
 import com.sangdari.global.security.jwt.JwtProvider;
@@ -49,7 +49,7 @@ public class AuthService {
     public AuthResponse reissue(HttpServletRequest request, HttpServletResponse response) {
         Optional<String> refreshTokenOptional = jwtProvider.extractRefreshToken(request);
         if(refreshTokenOptional.isEmpty()) {
-            throw new InvalidTokenException("토큰이 없습니다.");
+            throw new AuthTokenExpiredException("로그인 시간이 만료되었습니다. 다시 로그인해주세요.");
         }
         String extractRefreshToken = refreshTokenOptional.get();
 
@@ -58,11 +58,11 @@ public class AuthService {
         User user = userMapper.findByPk(userId);
 
         if(user == null || user.getRefreshToken() == null) {
-            throw new InvalidTokenException("유효하지 않은 회원의 토큰입니다.");
+            throw new AuthTokenExpiredException("유효하지 않은 회원의 토큰입니다.");
         }
 
         if(!user.getRefreshToken().equals(extractRefreshToken)) {
-            throw new InvalidTokenException("토큰이 일치하지 않습니다.");
+            throw new AuthTokenExpiredException("토큰이 일치하지 않습니다.");
         }
 
         return this.generateAuthentication(response, user);
@@ -75,11 +75,11 @@ public class AuthService {
         authMapper.updateRefreshToken(user.getUserId(), newRefreshToken);
 
         cookieManager.setCookie(
-                response
-                , jwtConfig.refreshTokenCookieName()
-                , newRefreshToken
-                , jwtConfig.refreshTokenCookieExpiry()
-                , jwtConfig.reissUri()
+            response
+            , jwtConfig.refreshTokenCookieName()
+            , newRefreshToken
+            , jwtConfig.refreshTokenCookieExpiry()
+            , jwtConfig.reissUri()
         );
 
         // 리턴

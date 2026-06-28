@@ -1,8 +1,6 @@
 package com.sangdari.global.exception;
 
-import com.sangdari.global.exception.custom.AuthLoginFailedException;
-import com.sangdari.global.exception.custom.AuthLoginRequiredException;
-import com.sangdari.global.exception.custom.InvalidTokenException;
+import com.sangdari.global.exception.custom.*;
 import com.sangdari.global.response.GlobalResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -20,12 +18,12 @@ public class GlobalExceptionHandler {
             AuthLoginRequiredException exception
     ) {
         return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(GlobalResponse.<String>builder()
-                        .code("E20")
-                        .message("AUTH_LOGIN_REQUIRED")
-                        .data(exception.getMessage())
-                        .build());
+            .status(HttpStatus.UNAUTHORIZED)
+            .body(GlobalResponse.<String>builder()
+                .code("E20")
+                .message("AUTH_LOGIN_REQUIRED")
+                .data(exception.getMessage())
+                .build());
     }
 
     @ExceptionHandler(AuthLoginFailedException.class)
@@ -41,9 +39,9 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(InvalidTokenException.class)
-    public ResponseEntity<GlobalResponse<String>> invalidTokenHandle(
-            AuthLoginFailedException exception
+    @ExceptionHandler(AuthTokenExpiredException.class)
+    public ResponseEntity<GlobalResponse<String>> authTokenExpiredHandle(
+            AuthTokenExpiredException exception
     ) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
             GlobalResponse.<String>builder()
@@ -54,17 +52,16 @@ public class GlobalExceptionHandler {
         );
     }
 
-
     @ExceptionHandler(Exception.class)
     public ResponseEntity<GlobalResponse<String>> othersHandle(Exception e) {
         log.error("시스템 에러: {}\n{}", e.getMessage(), Arrays.toString(e.getStackTrace()));
 
         return ResponseEntity.status(500).body(
-                GlobalResponse.<String>builder()
-                        .code("E99")
-                        .message("시스템 에러")
-                        .data("현재 서비스 이용이 불가합니다. 잠시 후 다시 시도해 주십시오.")
-                        .build()
+            GlobalResponse.<String>builder()
+                .code("E99")
+                .message("시스템 에러")
+                .data("현재 서비스 이용이 불가합니다. 잠시 후 다시 시도해 주십시오.")
+                .build()
         );
     }
 }

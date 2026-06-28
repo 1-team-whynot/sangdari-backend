@@ -1,7 +1,7 @@
 package com.sangdari.global.security.jwt;
 
 import com.sangdari.domain.user.entities.User;
-import com.sangdari.global.exception.custom.InvalidTokenException;
+import com.sangdari.global.exception.custom.AuthTokenExpiredException;
 import com.sangdari.global.security.cookie.CookieManager;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
@@ -59,13 +59,13 @@ public class JwtProvider {
                 .parseSignedClaims(token)
                 .getPayload();
         } catch (ExpiredJwtException e) {
-            throw new InvalidTokenException("토큰이 만료됐습니다.");
+            throw new AuthTokenExpiredException("토큰이 만료됐습니다.");
         } catch (UnsupportedJwtException e) {
-            throw new InvalidTokenException("서명이 위조된 토큰입니다.");
+            throw new AuthTokenExpiredException("서명이 위조된 토큰입니다.");
         } catch (MalformedJwtException e) {
-            throw new InvalidTokenException("토큰 형식이 올바르지 않습니다.");
+            throw new AuthTokenExpiredException("토큰 형식이 올바르지 않습니다.");
         } catch (JwtException | IllegalArgumentException e) {
-            throw new InvalidTokenException("토큰 검증에 실패했습니다.");
+            throw new AuthTokenExpiredException("토큰 검증에 실패했습니다.");
         }
     }
 
