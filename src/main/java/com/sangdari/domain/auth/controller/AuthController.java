@@ -4,7 +4,7 @@ import com.sangdari.domain.auth.requests.LoginRequest;
 import com.sangdari.domain.auth.requests.SignupRequest;
 import com.sangdari.domain.auth.responses.AuthResponse;
 import com.sangdari.domain.auth.services.AuthService;
-import com.sangdari.global.response.GlobalResponse;
+import com.sangdari.global.responses.GlobalResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;

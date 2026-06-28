@@ -2,7 +2,7 @@ package com.sangdari.domain.payment.clients;
 
 import com.sangdari.domain.payment.requests.PaymentConfirmRequest;
 import com.sangdari.domain.payment.responses.TossConfirmResponse;
-import com.sangdari.global.errors.PaymentFailedException;
+import com.sangdari.global.exception.custom.PaymentFailedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;

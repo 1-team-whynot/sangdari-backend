@@ -4,14 +4,13 @@ import com.sangdari.domain.payment.clients.TossPaymentClient;
 import com.sangdari.domain.payment.entities.Payment;
 import com.sangdari.domain.payment.entities.PaymentReadyInfo;
 import com.sangdari.domain.payment.mappers.PaymentMapper;
-import com.sangdari.domain.payment.mappers.ReservationMapper;
 import com.sangdari.domain.payment.requests.PaymentConfirmRequest;
 import com.sangdari.domain.payment.requests.PaymentMockConfirmRequest;
 import com.sangdari.domain.payment.requests.PaymentReadyRequest;
 import com.sangdari.domain.payment.responses.PaymentConfirmResponse;
 import com.sangdari.domain.payment.responses.PaymentReadyResponse;
 import com.sangdari.domain.payment.responses.TossConfirmResponse;
-import com.sangdari.global.errors.*;
+import com.sangdari.global.exception.custom.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +25,6 @@ import java.util.UUID;
 public class PaymentService {
 
     private final PaymentMapper paymentMapper;
-    private final ReservationMapper reservationMapper;
     private final TossPaymentClient tossPaymentClient;
 
     @Transactional
@@ -43,13 +41,25 @@ public class PaymentService {
 
         validateReservationStatus(paymentType, info.getReservationStatus());
 
-        boolean alreadyDone = paymentMapper.existsDonePayment(
+        Payment existingPayment = paymentMapper.findByReservationIdAndPaymentType(
                 info.getReservationId(),
                 paymentType
         );
 
-        if (alreadyDone) {
-            throw new PaymentDuplicatedException("이미 완료된 결제입니다.");
+        if (existingPayment != null) {
+            if ("DONE".equals(existingPayment.getStatus())) {
+                throw new PaymentDuplicatedException("이미 완료된 결제입니다.");
+            }
+
+            return new PaymentReadyResponse(
+                    existingPayment.getPaymentId(),
+                    existingPayment.getOrderId(),
+                    existingPayment.getOrderName(),
+                    existingPayment.getTotalAmount(),
+                    existingPayment.getPaymentType(),
+                    info.getCustomerName(),
+                    info.getCustomerEmail()
+            );
         }
 
         Long amount = calculatePaymentAmount(paymentType, info);
@@ -144,6 +154,78 @@ public class PaymentService {
         }
 
         return toConfirmResponse(payment);
+    }
+
+    @Transactional
+    public PaymentConfirmResponse confirmTossPayment(PaymentConfirmRequest request) {
+
+        // 1. orderId로 우리 DB에 저장된 결제 정보 조회
+        Payment payment = paymentMapper.findByOrderId(request.orderId())
+                .orElseThrow(() -> new PaymentNotFoundException("결제 정보를 찾을 수 없습니다."));
+
+        // 2. 이미 결제 완료된 건이면 Toss에 다시 승인 요청하지 않음
+        if ("DONE".equals(payment.getStatus())) {
+            if (payment.getPaymentKey() != null
+                    && payment.getPaymentKey().equals(request.paymentKey())) {
+                return PaymentConfirmResponse.from(payment);
+            }
+
+            throw new PaymentFailedException("이미 다른 결제키로 승인된 주문입니다.");
+        }
+
+        // 3. 프론트에서 돌아온 amount와 DB에 저장된 결제 예정 금액 비교
+        if (!payment.getTotalAmount().equals(request.amount())) {
+            throw new PaymentAmountMismatchException("결제 금액이 일치하지 않습니다.");
+        }
+
+        // 4. Toss Payments 실제 결제 승인 API 호출
+        TossConfirmResponse tossResponse = tossPaymentClient.confirm(request);
+
+        // 5. Toss 응답 상태 확인
+        if (!"DONE".equals(tossResponse.status())) {
+            throw new PaymentFailedException("결제가 정상 승인되지 않았습니다.");
+        }
+
+        // 6. 영수증 URL 꺼내기
+        String receiptUrl = null;
+
+        if (tossResponse.receipt() != null) {
+            receiptUrl = tossResponse.receipt().url();
+        }
+
+        // 7. Toss 승인 결과를 payment 테이블에 반영
+        int updatedPaymentCount = paymentMapper.updateTossSuccess(
+                payment.getPaymentId(),
+                tossResponse.paymentKey(),
+                tossResponse.method(),
+                tossResponse.status(),
+                tossResponse.totalAmount(),
+                tossResponse.balanceAmount(),
+                receiptUrl,
+                tossResponse.approvedAt()
+        );
+
+        if (updatedPaymentCount != 1) {
+            throw new PaymentFailedException("결제 승인 정보 저장에 실패했습니다.");
+        }
+
+        // 8. 예약 상태를 결제 타입에 맞게 변경
+        String nextReservationStatus = getNextReservationStatus(payment.getPaymentType());
+
+        int updatedReservationCount = paymentMapper.updateReservationStatus(
+                payment.getReservationId(),
+                nextReservationStatus
+        );
+
+        if (updatedReservationCount != 1) {
+            throw new PaymentFailedException("예약 상태 변경에 실패했습니다.");
+        }
+
+        // 9. 갱신된 결제 정보 다시 조회 후 응답 반환
+        Payment updatedPayment = paymentMapper.findById(payment.getPaymentId())
+                .orElseThrow(() -> new PaymentNotFoundException("결제 정보를 찾을 수 없습니다."));
+
+        return PaymentConfirmResponse.from(updatedPayment);
     }
 
     private String normalizePaymentType(String paymentType) {
@@ -246,67 +328,4 @@ public class PaymentService {
                 payment.getApprovedAt()
         );
     }
-    @Transactional
-    public PaymentConfirmResponse confirmTossPayment(PaymentConfirmRequest request) {
-
-        // 1. orderId로 우리 DB에 저장된 결제 정보 조회
-        Payment payment = paymentMapper.findByOrderId(request.orderId())
-                .orElseThrow(() -> new PaymentNotFoundException("결제 정보를 찾을 수 없습니다."));
-
-        // 2. 이미 결제 완료된 건이면 Toss에 다시 승인 요청하지 않음
-        if ("DONE".equals(payment.getStatus())) {
-            if (payment.getPaymentKey() != null
-                    && payment.getPaymentKey().equals(request.paymentKey())) {
-                return PaymentConfirmResponse.from(payment);
-            }
-
-            throw new PaymentFailedException("이미 다른 결제키로 승인된 주문입니다.");
-        }
-
-        // 3. 프론트에서 돌아온 amount와 DB에 저장된 결제 예정 금액 비교
-        if (!payment.getTotalAmount().equals(request.amount())) {
-            throw new PaymentAmountMismatchException("결제 금액이 일치하지 않습니다.");
-        }
-
-        // 4. Toss Payments 실제 결제 승인 API 호출
-        TossConfirmResponse tossResponse = tossPaymentClient.confirm(request);
-
-        // 5. Toss 응답 상태 확인
-        if (!"DONE".equals(tossResponse.status())) {
-            throw new PaymentFailedException("결제가 정상 승인되지 않았습니다.");
-        }
-
-        // 6. 영수증 URL 꺼내기
-        String receiptUrl = null;
-
-        if (tossResponse.receipt() != null) {
-            receiptUrl = tossResponse.receipt().url();
-        }
-
-        // 7. Toss 승인 결과를 payment 테이블에 반영
-        paymentMapper.updateTossSuccess(
-                payment.getPaymentId(),
-                tossResponse.paymentKey(),
-                tossResponse.method(),
-                tossResponse.status(),
-                tossResponse.totalAmount(),
-                tossResponse.balanceAmount(),
-                receiptUrl,
-                tossResponse.approvedAt()
-        );
-
-        // 8. 예약 상태를 결제 완료 상태로 변경
-        int updatedReservationCount = reservationMapper.updatePaymentDone(payment.getReservationId());
-
-        if (updatedReservationCount != 1) {
-            throw new PaymentFailedException("예약 상태 변경에 실패했습니다.");
-        }
-
-        // 9. 갱신된 결제 정보 다시 조회 후 응답 반환
-        Payment updatedPayment = paymentMapper.findById(payment.getPaymentId())
-                .orElseThrow(() -> new PaymentNotFoundException("결제 정보를 찾을 수 없습니다."));
-
-        return PaymentConfirmResponse.from(updatedPayment);
-    }
-
 }

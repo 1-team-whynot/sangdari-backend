@@ -9,20 +9,31 @@ import java.util.Optional;
 
 @Mapper
 public interface PaymentMapper {
+
     // 결제 준비 정보 조회
     PaymentReadyInfo findPaymentReadyInfoForUpdate(
             @Param("reservationId") Long reservationId
     );
+
+    // 기존 결제 정보 조회
+    Payment findByReservationIdAndPaymentType(
+            @Param("reservationId") Long reservationId,
+            @Param("paymentType") String paymentType
+    );
+
     // 완료된 결제 존재 여부 확인
     boolean existsDonePayment(
             @Param("reservationId") Long reservationId,
             @Param("paymentType") String paymentType
     );
+
     // READY 결제 저장
     int insertReadyPayment(Payment payment);
 
     // orderId로 결제 조회
-    Payment findPaymentByOrderIdForUpdate(@Param("orderId") String orderId);
+    Payment findPaymentByOrderIdForUpdate(
+            @Param("orderId") String orderId
+    );
 
     // 결제 성공 처리
     int updatePaymentDone(Payment payment);
@@ -35,21 +46,31 @@ public interface PaymentMapper {
             @Param("reservationId") Long reservationId,
             @Param("status") String status
     );
+
     // 완료된 계약금 금액 조회
-    Long findCompletedDepositAmount(@Param("reservationId") Long reservationId);
+    Long findCompletedDepositAmount(
+            @Param("reservationId") Long reservationId
+    );
 
-    Optional<Payment> findByOrderId(String orderId);
+    // orderId로 결제 조회
+    Optional<Payment> findByOrderId(
+            @Param("orderId") String orderId
+    );
 
-    Optional<Payment> findById(Long paymentId);
+    // paymentId로 결제 조회
+    Optional<Payment> findById(
+            @Param("paymentId") Long paymentId
+    );
 
+    // Toss 결제 성공 처리
     int updateTossSuccess(
-            Long paymentId,
-            String paymentKey,
-            String paymentType,
-            String method,
-            Long totalAmount,
-            Long balanceAmount,
-            String receiptUrl,
-            String approvedAt
+            @Param("paymentId") Long paymentId,
+            @Param("paymentKey") String paymentKey,
+            @Param("method") String method,
+            @Param("status") String status,
+            @Param("totalAmount") Long totalAmount,
+            @Param("balanceAmount") Long balanceAmount,
+            @Param("receiptUrl") String receiptUrl,
+            @Param("approvedAt") String approvedAt
     );
 }

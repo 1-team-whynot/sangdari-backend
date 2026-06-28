@@ -223,4 +223,37 @@
           AND deleted_at IS NULL
     </update>
 
+    <select id="findByReservationIdAndPaymentType" resultMap="PaymentResultMap">
+        SELECT
+            payment_id,
+            reservation_id,
+            user_id,
+            payment_key,
+            order_id,
+            order_name,
+            payment_type,
+            method,
+            status,
+            total_amount,
+            balance_amount,
+            platform_fee,
+            last_transaction_key,
+            is_partial_cancelable,
+            requested_at,
+            approved_at,
+            receipt_url,
+            failure_code,
+            failure_message,
+            raw_response,
+            created_at,
+            updated_at,
+            deleted_at
+        FROM payments
+        WHERE reservation_id = #{reservationId}
+          AND payment_type = #{paymentType}
+          AND deleted_at IS NULL
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
     </mapper>
