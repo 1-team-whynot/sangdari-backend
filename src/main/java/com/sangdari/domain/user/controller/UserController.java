@@ -38,7 +38,7 @@ public class UserController {
         );
     }
 
-    @PutMapping("/users/info")
+    @PutMapping("/users/info-update")
     public ResponseEntity<GlobalResponse<UserResponse>> updateMyInfo(
         @AuthenticationPrincipal Claims claims,
         @Valid @RequestBody UserUpdateRequest request
