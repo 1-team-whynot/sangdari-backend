@@ -101,6 +101,28 @@ public class AuthService {
             .build();
     }
 
+    // 로그아웃
+    @Transactional(rollbackFor = Exception.class)
+    public void logout(HttpServletResponse response, long id) {
+        // 1. 유저 정보 검증
+        User user = userMapper.findByPk(id);
+        if(user == null) {
+            throw new AuthTokenExpiredException("유효하지 않은 회원의 토큰입니다.");
+        }
+
+        // 2. DB에 저장된 리프레쉬 토큰 파기 (null로 업데이트)
+        authMapper.updateRefreshToken(id, null);
+
+        // 3. 브라우저 쿠키에 저장된 리프레쉬 토큰 파기 (만료 시간을 0초로 전달)
+        cookieManager.setCookie(
+                response
+                , jwtConfig.refreshTokenCookieName()
+                , null
+                , 0
+                , jwtConfig.reissueUri()
+        );
+    }
+
     // 회원가입
     @Transactional(rollbackFor = Exception.class)
     public void signup(SignupRequest signupRequest) {

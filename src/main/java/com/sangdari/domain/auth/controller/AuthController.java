@@ -4,12 +4,14 @@ import com.sangdari.domain.auth.requests.LoginRequest;
 import com.sangdari.domain.auth.requests.SignupRequest;
 import com.sangdari.domain.auth.responses.AuthResponse;
 import com.sangdari.domain.auth.services.AuthService;
-import com.sangdari.global.responses.GlobalResponse;
+import com.sangdari.global.response.GlobalResponse;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -43,6 +45,22 @@ public class AuthController {
             .message("토큰 재발급 완료")
             .data(authService.reissue(request, response))
             .build()
+        );
+    }
+
+    @PostMapping("/auth/logout")
+    public ResponseEntity<GlobalResponse<String>> logout(
+            HttpServletResponse response
+            , @AuthenticationPrincipal Claims claims // JWT 필터를 통과한 사용자 클레임 획득
+    ) {
+        // claims.getSubject()에는 토큰 발행 시 담았던 유저 식별자(ID)가 들어있습니다.
+        authService.logout(response, Long.parseLong(claims.getSubject()));
+
+        return ResponseEntity.status(200).body(
+                GlobalResponse.<String>builder()
+                        .code("00")
+                        .message("로그아웃 완료")
+                        .build()
         );
     }
 
