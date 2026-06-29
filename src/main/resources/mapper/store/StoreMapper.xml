@@ -20,13 +20,34 @@
         FROM stores s
              INNER JOIN store_food_categories sfc ON s.store_id = sfc.store_id
              INNER JOIN food_categories fc ON sfc.food_category_id = fc.food_category_id
+        WHERE s.store_id NOT IN (
+            SELECT r.store_id
+            FROM reservations r
+            WHERE r.deleted_at IS NULL
+              AND r.status IN (
+                  'CONFIRMED',
+                  'PAYMENT_COMPLETED',
+                  'COMPLETED'
+              )
+        )
         GROUP BY s.store_id
         ORDER BY s.store_id DESC
         LIMIT #{allStoreListReq.limit} OFFSET #{offset}
     </select>
 
     <select id="getTotalStoreCount" resultType="long">
-        SELECT COUNT(*) FROM stores
+        SELECT COUNT(*)
+        FROM stores s
+        WHERE s.store_id NOT IN (
+            SELECT r.store_id
+            FROM reservations r
+            WHERE r.deleted_at IS NULL
+              AND r.status IN (
+                  'CONFIRMED',
+                  'PAYMENT_COMPLETED',
+                  'COMPLETED'
+              )
+        )
     </select>
 
     <!-- GROUP_CONCAT: 카테고리명들을 담은 문자열(ex "카페,식당")로 반환 -->
@@ -50,11 +71,13 @@
                 AND sr.region_id = #{storeListReq.regionId}
             </if>
 
-            <if test="storeListReq.date != null and storeListReq.date != ''">
+            <if test="storeListReq.eventStartDate != null and storeListReq.eventStartDate != '' and storeListReq.eventEndDate != null and storeListReq.eventEndDate != ''">
                 AND s.store_id NOT IN (
                 SELECT r.store_id
                 FROM reservations r
-                WHERE #{storeListReq.date} BETWEEN DATE(r.event_start_date) AND DATE(r.event_end_date)
+                WHERE r.deleted_at IS NULL
+                AND DATE(r.event_start_date) &lt;= #{storeListReq.eventEndDate}
+                AND DATE(r.event_end_date) &gt;= #{storeListReq.eventStartDate}
                 AND r.status IN (
                 'CONFIRMED',
                 'PAYMENT_COMPLETED',
@@ -97,11 +120,13 @@
                 AND sr.region_id = #{storeListReq.regionId}
             </if>
 
-            <if test="storeListReq.date != null and storeListReq.date != ''">
+            <if test="storeListReq.eventStartDate != null and storeListReq.eventStartDate != '' and storeListReq.eventEndDate != null and storeListReq.eventEndDate != ''">
                 AND s.store_id NOT IN (
                 SELECT r.store_id
                 FROM reservations r
-                WHERE #{storeListReq.date} BETWEEN DATE(r.event_start_date) AND DATE(r.event_end_date)
+                WHERE r.deleted_at IS NULL
+                AND DATE(r.event_start_date) &lt;= #{storeListReq.eventEndDate}
+                AND DATE(r.event_end_date) &gt;= #{storeListReq.eventStartDate}
                 AND r.status IN (
                 'CONFIRMED',
                 'PAYMENT_COMPLETED',

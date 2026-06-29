@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -104,6 +105,21 @@ public class GlobalExceptionHandler {
                         .code("E20")
                         .message("AUTH_LOGIN_REQUIRED")
                         .data(exception.getMessage())
+                        .build());
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<GlobalResponse<String>> authenticationHandle(
+            AuthenticationException exception
+    ) {
+        AuthLoginRequiredException authLoginRequiredException = new AuthLoginRequiredException();
+
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(GlobalResponse.<String>builder()
+                        .code("E20")
+                        .message("AUTH_LOGIN_REQUIRED")
+                        .data(authLoginRequiredException.getMessage())
                         .build());
     }
 
@@ -257,6 +273,16 @@ public class GlobalExceptionHandler {
                         .build());
     }
 
+    @ExceptionHandler(StoreAlreadyReservedException.class)
+    public ResponseEntity<GlobalResponse<List<String>>> storeAlreadyReservedHandle(StoreAlreadyReservedException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(GlobalResponse.<List<String>>builder()
+                        .code("E46")
+                        .message("STORE_ALREADY_RESERVED")
+                        .data(List.of(e.getMessage()))
+                        .build());
+    }
+
 
     // =========================
     // E50 예약 관련
@@ -330,6 +356,18 @@ public class GlobalExceptionHandler {
                 HttpStatus.CONFLICT,
                 "E55",
                 "RESERVATION_ALREADY_CANCELED",
+                e.getMessage()
+        );
+    }
+
+    @ExceptionHandler(ReservationRequiredMissingException.class)
+    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> reservationRequiredMissingHandle(
+            ReservationRequiredMissingException e
+    ) {
+        return error(
+                HttpStatus.BAD_REQUEST,
+                "E56",
+                "RESERVATION_REQUIRED_MISSING",
                 e.getMessage()
         );
     }

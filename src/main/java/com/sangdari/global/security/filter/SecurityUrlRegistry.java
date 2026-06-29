@@ -10,7 +10,7 @@ public final class SecurityUrlRegistry {
 
     };
     public static final String[] AUTH_REQUIRED_POST_URLS = {
-
+            "/api/reservations"
     };
     public static final String[] AUTH_REQUIRED_PUT_URLS = {
 

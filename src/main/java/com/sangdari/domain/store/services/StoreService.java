@@ -53,12 +53,24 @@ public class StoreService {
          throw new ChecklistInvalidFormatException();
       }
 
-      if (storeListReq.regionId() == null || storeListReq.date() == null || storeListReq.minHeadcount() == null || storeListReq.maxHeadcount() == null || storeListReq.selectedCategories() == null || storeListReq.isPowerAvailable() == null ) {
+      if (storeListReq.regionId() == null || storeListReq.eventStartDate() == null || storeListReq.eventEndDate() == null || storeListReq.minHeadcount() == null || storeListReq.maxHeadcount() == null || storeListReq.selectedCategories() == null || storeListReq.isPowerAvailable() == null ) {
          throw new ChecklistRequiredMissingException();
       }
 
-      LocalDate eventDate = LocalDate.parse(storeListReq.date());
-      if (eventDate.isBefore(LocalDate.now().plusDays(14))) {
+      LocalDate eventStartDate;
+      LocalDate eventEndDate;
+      try {
+         eventStartDate = LocalDate.parse(storeListReq.eventStartDate());
+         eventEndDate = LocalDate.parse(storeListReq.eventEndDate());
+      } catch (Exception e) {
+         throw new ChecklistInvalidFormatException();
+      }
+
+      if (eventEndDate.isBefore(eventStartDate)) {
+         throw new ChecklistInvalidFormatException();
+      }
+
+      if (eventStartDate.isBefore(LocalDate.now().plusDays(14))) {
          throw new ChecklistDateTooSoonException();
       }
 
