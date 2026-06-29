@@ -8,9 +8,10 @@ public final class SecurityUrlRegistry {
     // ----------------------------
     public static final String[] AUTH_REQUIRED_GET_URLS = {
         "/api/users/info"
+        , "/api/reservations/my"
     };
     public static final String[] AUTH_REQUIRED_POST_URLS = {
-            "/api/reservations"
+        "/api/reservations"
         , "/api/auth/logout"
     };
     public static final String[] AUTH_REQUIRED_PUT_URLS = {
