@@ -5,10 +5,17 @@ import com.sangdari.domain.reservation.entities.ReservationMenu;
 import com.sangdari.domain.reservation.entities.ReservationStore;
 import com.sangdari.domain.reservation.mapper.ReservationCreateMapper;
 import com.sangdari.domain.reservation.mapper.ReservationMenuMapper;
+import com.sangdari.domain.reservation.mapper.ReservationQueryMapper;
 import com.sangdari.domain.reservation.requests.ReservationCreateRequest;
+import com.sangdari.domain.reservation.requests.ReservationMyListRequest;
 import com.sangdari.domain.reservation.responses.ReservationCreateResponse;
 import com.sangdari.domain.reservation.responses.ReservationMenuResponse;
+import com.sangdari.domain.reservation.responses.ReservationMyItemResponse;
+import com.sangdari.domain.reservation.responses.ReservationMyListResponse;
+import com.sangdari.domain.reservation.responses.ReservationMyMenuResponse;
 import com.sangdari.domain.reservation.type.ReservationStatus;
+import com.sangdari.domain.user.entities.User;
+import com.sangdari.domain.user.mapper.UserMapper;
 import com.sangdari.global.exception.custom.AuthLoginRequiredException;
 import com.sangdari.global.exception.custom.ChecklistDateTooSoonException;
 import com.sangdari.global.exception.custom.ReservationRequiredMissingException;
@@ -27,16 +34,62 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ReservationService {
+    private static final String MY_RESERVATIONS_SUCCESS_MESSAGE = "내 요청 목록 조회가 완료되었습니다.";
+    private static final String MY_RESERVATIONS_EMPTY_MESSAGE = "조회된 요청 내역이 없습니다.";
     private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final ReservationCreateMapper reservationCreateMapper;
     private final ReservationMenuMapper reservationMenuMapper;
+    private final ReservationQueryMapper reservationQueryMapper;
+    private final UserMapper userMapper;
+
+    @Transactional(readOnly = true)
+    public ReservationMyListResponse getMyReservations(Long userId, ReservationMyListRequest reservationMyListRequest) {
+        if (userId == null) {
+            throw new AuthLoginRequiredException();
+        }
+
+        User user = userMapper.findByPk(userId);
+        if (user == null || user.getWithdrawAt() != null) {
+            throw new AuthLoginRequiredException();
+        }
+
+        int page = reservationMyListRequest.pageOrDefault();
+        int limit = reservationMyListRequest.limitOrDefault();
+        int offset = reservationMyListRequest.getOffset();
+
+        long totalCount = reservationQueryMapper.countMyReservations(userId);
+        List<ReservationMyItemResponse> reservations = reservationQueryMapper.findMyReservations(userId, limit, offset);
+
+        List<Long> reservationIds = reservations.stream()
+                .map(ReservationMyItemResponse::getReservationId)
+                .toList();
+
+        Map<Long, List<ReservationMyMenuResponse>> menusByReservationId = reservationIds.isEmpty()
+                ? Map.of()
+                : reservationQueryMapper.findMenusByReservationIds(reservationIds).stream()
+                        .collect(Collectors.groupingBy(ReservationMyMenuResponse::getReservationId));
+
+        reservations.forEach(reservation -> reservation.setMenus(
+                menusByReservationId.getOrDefault(reservation.getReservationId(), List.of())
+        ));
+
+        return ReservationMyListResponse.builder()
+                .reservations(reservations)
+                .totalCount(totalCount)
+                .page(page)
+                .limit(limit)
+                .message(reservations.isEmpty() ? MY_RESERVATIONS_EMPTY_MESSAGE : MY_RESERVATIONS_SUCCESS_MESSAGE)
+                .build();
+    }
 
     @Transactional
     public ReservationCreateResponse createReservation(Long userId, ReservationCreateRequest reservationCreateRequest) {
