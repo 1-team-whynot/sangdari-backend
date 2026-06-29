@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class GlobalRes<T> {
+public class GlobalResponse<T> {
     private String code;
     private String message;
     private T data;

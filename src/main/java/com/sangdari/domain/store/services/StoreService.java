@@ -5,9 +5,13 @@ import com.sangdari.domain.store.requests.AllStoreListReq;
 import com.sangdari.domain.store.requests.StoreListReq;
 import com.sangdari.domain.store.responses.StoreItems;
 import com.sangdari.domain.store.responses.StoreListRes;
+import com.sangdari.global.exception.custom.ChecklistDateTooSoonException;
+import com.sangdari.global.exception.custom.ChecklistInvalidFormatException;
+import com.sangdari.global.exception.custom.ChecklistRequiredMissingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -16,6 +20,11 @@ public class StoreService {
    private final StoreMapper storeMapper;
 
    public  StoreListRes allStoreList(AllStoreListReq allStoreListReq) {
+
+      if (allStoreListReq.getOffset() < 0) {
+         throw new ChecklistInvalidFormatException();
+      }
+
       // offset
       int offset = allStoreListReq.getOffset();
 
@@ -35,6 +44,19 @@ public class StoreService {
    }
 
    public StoreListRes storeList(StoreListReq storeListReq) {
+
+      if (storeListReq.getOffset() < 0) {
+         throw new ChecklistInvalidFormatException();
+      }
+
+      if (storeListReq.regionId() == null || storeListReq.date() == null || storeListReq.minHeadcount() == null || storeListReq.maxHeadcount() == null || storeListReq.selectedCategories() == null || storeListReq.isPowerAvailable() == null ) {
+         throw new ChecklistRequiredMissingException();
+      }
+
+      LocalDate eventDate = LocalDate.parse(storeListReq.date());
+      if (eventDate.isBefore(LocalDate.now().plusDays(14))) {
+         throw new ChecklistDateTooSoonException();
+      }
 
       // offset
       int offset = storeListReq.getOffset();

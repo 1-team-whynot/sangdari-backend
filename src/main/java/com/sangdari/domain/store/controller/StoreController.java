@@ -1,11 +1,10 @@
 package com.sangdari.domain.store.controller;
 
-import com.sangdari.domain.store.mapper.StoreMapper;
 import com.sangdari.domain.store.requests.AllStoreListReq;
 import com.sangdari.domain.store.requests.StoreListReq;
 import com.sangdari.domain.store.responses.StoreListRes;
 import com.sangdari.domain.store.services.StoreService;
-import com.sangdari.global.responses.GlobalRes;
+import com.sangdari.global.responses.GlobalResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,12 +19,12 @@ public class StoreController {
 
     // 전체 업체 목록 데이터
     @GetMapping("allStores")
-    public ResponseEntity<GlobalRes<StoreListRes>> allStoreList(AllStoreListReq allStoreListReq) {
+    public ResponseEntity<GlobalResponse<StoreListRes>> allStoreList(AllStoreListReq allStoreListReq) {
 
         StoreListRes storeListRes = storeService.allStoreList(allStoreListReq);
 
         return  ResponseEntity.status(200).body(
-                GlobalRes.<StoreListRes>builder()
+                GlobalResponse.<StoreListRes>builder()
                         .code("00")
                         .message("정상처리")
                         .data(storeListRes)
@@ -35,12 +34,12 @@ public class StoreController {
 
     // 필터링한 업체 목록 데이터
     @GetMapping("/stores")
-    public ResponseEntity<GlobalRes<StoreListRes>> storeList(StoreListReq storeListReq) {
+    public ResponseEntity<GlobalResponse<StoreListRes>> storeList(StoreListReq storeListReq) {
 
        StoreListRes storeListRes = storeService.storeList(storeListReq);
 
         return  ResponseEntity.status(200).body(
-                GlobalRes.<StoreListRes>builder()
+                GlobalResponse.<StoreListRes>builder()
                         .code("00")
                         .message("정상처리")
                         .data(storeListRes)
