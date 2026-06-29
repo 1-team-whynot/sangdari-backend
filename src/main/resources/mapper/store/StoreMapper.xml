@@ -15,7 +15,7 @@
             s.addr_base,
             s.min_headcount,
             s.max_headcount,
-            s.is_Battery_supported,
+            s.is_battery_supported,
             GROUP_CONCAT(fc.name ORDER BY fc.name SEPARATOR ',') as food_category_names
         FROM stores s
              INNER JOIN store_food_categories sfc ON s.store_id = sfc.store_id
@@ -39,7 +39,7 @@
         s.addr_base,
         s.min_headcount,
         s.max_headcount,
-        s.is_Battery_supported,
+        s.is_battery_supported,
         GROUP_CONCAT(fc.name SEPARATOR ',') as food_category_names
         FROM stores s
         INNER JOIN store_food_categories sfc ON s.store_id = sfc.store_id
@@ -128,5 +128,32 @@
                 </foreach>
             </if>
         </where>
+    </select>
+
+    <select id="getStoreDetail" resultType="com.sangdari.domain.store.responses.StoreDetailItems">
+        SELECT
+            s.store_id,
+            s.image_url,
+            s.business_name,
+            o.business_number
+        FROM stores s
+             INNER JOIN owners o ON s.owner_id = o.owner_id
+        WHERE s.store_id = #{storeId}
+          AND s.deleted_at IS NULL
+          AND o.deleted_at IS NULL
+          AND o.withdraw_at IS NULL
+    </select>
+
+    <select id="getStoreMenus" resultType="com.sangdari.domain.store.responses.StoreMenuItems">
+        SELECT
+            m.menu_id,
+            m.name,
+            m.description,
+            m.price,
+            m.image_url
+        FROM menus m
+        WHERE m.store_id = #{storeId}
+          AND m.deleted_at IS NULL
+        ORDER BY m.menu_id
     </select>
 </mapper>

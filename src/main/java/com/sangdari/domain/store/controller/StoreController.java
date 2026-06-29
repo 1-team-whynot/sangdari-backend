@@ -2,12 +2,14 @@ package com.sangdari.domain.store.controller;
 
 import com.sangdari.domain.store.requests.AllStoreListReq;
 import com.sangdari.domain.store.requests.StoreListReq;
+import com.sangdari.domain.store.responses.StoreDetailRes;
 import com.sangdari.domain.store.responses.StoreListRes;
 import com.sangdari.domain.store.services.StoreService;
 import com.sangdari.global.responses.GlobalResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -43,6 +45,21 @@ public class StoreController {
                         .code("00")
                         .message("정상처리")
                         .data(storeListRes)
+                        .build()
+        );
+    }
+
+    // 업체 상세 데이터
+    @GetMapping("/stores/{storeId}")
+    public ResponseEntity<GlobalResponse<StoreDetailRes>> storeDetail(@PathVariable Long storeId) {
+
+        StoreDetailRes storeDetailRes = storeService.storeDetail(storeId);
+
+        return  ResponseEntity.status(200).body(
+                GlobalResponse.<StoreDetailRes>builder()
+                        .code("00")
+                        .message("정상처리")
+                        .data(storeDetailRes)
                         .build()
         );
     }

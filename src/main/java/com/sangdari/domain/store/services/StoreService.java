@@ -3,11 +3,15 @@ package com.sangdari.domain.store.services;
 import com.sangdari.domain.store.mapper.StoreMapper;
 import com.sangdari.domain.store.requests.AllStoreListReq;
 import com.sangdari.domain.store.requests.StoreListReq;
+import com.sangdari.domain.store.responses.StoreDetailItems;
+import com.sangdari.domain.store.responses.StoreDetailRes;
 import com.sangdari.domain.store.responses.StoreItems;
 import com.sangdari.domain.store.responses.StoreListRes;
+import com.sangdari.domain.store.responses.StoreMenuItems;
 import com.sangdari.global.exception.custom.ChecklistDateTooSoonException;
 import com.sangdari.global.exception.custom.ChecklistInvalidFormatException;
 import com.sangdari.global.exception.custom.ChecklistRequiredMissingException;
+import com.sangdari.global.exception.custom.StoreNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -73,6 +77,25 @@ public class StoreService {
               .stores(filterStores)
               .totalItems(totalItems)
               .isLastPage(isLastPage)
+              .build();
+   }
+
+   public StoreDetailRes storeDetail(Long storeId) {
+
+      StoreDetailItems storeDetailItems = storeMapper.getStoreDetail(storeId);
+
+      if (storeDetailItems == null) {
+         throw new StoreNotFoundException();
+      }
+
+      List<StoreMenuItems> storeMenus = storeMapper.getStoreMenus(storeId);
+
+      return StoreDetailRes.builder()
+              .storeId(storeDetailItems.storeId())
+              .imageUrl(storeDetailItems.imageUrl())
+              .businessName(storeDetailItems.businessName())
+              .businessNumber(storeDetailItems.businessNumber())
+              .menus(storeMenus)
               .build();
    }
 }

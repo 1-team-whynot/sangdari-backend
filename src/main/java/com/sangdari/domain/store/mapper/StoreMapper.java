@@ -2,7 +2,9 @@ package com.sangdari.domain.store.mapper;
 
 import com.sangdari.domain.store.requests.AllStoreListReq;
 import com.sangdari.domain.store.requests.StoreListReq;
+import com.sangdari.domain.store.responses.StoreDetailItems;
 import com.sangdari.domain.store.responses.StoreItems;
+import com.sangdari.domain.store.responses.StoreMenuItems;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -22,4 +24,10 @@ public interface StoreMapper {
 
     // 불러온 업체 개수
     long countStores(@Param("offset") int offset, @Param("storeListReq") StoreListReq storeListReq);
+
+    // 업체 상세 기본 정보
+    StoreDetailItems getStoreDetail(@Param("storeId") Long storeId);
+
+    // 업체 상세 메뉴 목록
+    List<StoreMenuItems> getStoreMenus(@Param("storeId") Long storeId);
 }
