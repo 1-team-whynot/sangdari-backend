@@ -19,136 +19,31 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.List;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<GlobalResponse<Map<String, String>>> methodArgumentNotValidHandle(MethodArgumentNotValidException e) {
         Map<String, String> errors = e.getBindingResult()
-            .getFieldErrors()
-            .stream()
-            .collect(Collectors.toMap(
-                FieldError::getField,
-                fieldError -> fieldError.getDefaultMessage() != null ? fieldError.getDefaultMessage() : "유효하지 않은 값입니다.",
-                (existing, replacement) -> existing
-            ));
+                .getFieldErrors()
+                .stream()
+                .collect(Collectors.toMap(
+                        FieldError::getField,
+                        fieldError -> fieldError.getDefaultMessage() != null ? fieldError.getDefaultMessage() : "유효하지 않은 값입니다.",
+                        (existing, replacement) -> existing
+                ));
 
         return ResponseEntity.status(400).body(
-            GlobalResponse.<Map<String, String>>builder()
-            .code("E10")
-            .message("VALIDATION_FAILED")
-            .data(errors)
-            .build()
+                GlobalResponse.<Map<String, String>>builder()
+                        .code("E10")
+                        .message("VALIDATION_FAILED")
+                        .data(errors)
+                        .build()
         );
     }
-
-    @ExceptionHandler(AuthLoginRequiredException.class)
-    public ResponseEntity<GlobalResponse<String>> authLoginRequiredHandle(
-            AuthLoginRequiredException exception
-    ) {
-        return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(GlobalResponse.<String>builder()
-                    .code("E20")
-                    .message("AUTH_LOGIN_REQUIRED")
-                    .data(exception.getMessage())
-                    .build());
-    }
-
-    @ExceptionHandler(AuthLoginFailedException.class)
-    public ResponseEntity<GlobalResponse<String>> authLoginFailedHandle(
-            AuthLoginFailedException exception
-    ) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-            GlobalResponse.<String>builder()
-            .code("E21")
-            .message("AUTH_LOGIN_FAILED")
-            .data(exception.getMessage())
-            .build()
-        );
-    }
-
-    @ExceptionHandler(AuthTokenExpiredException.class)
-    public ResponseEntity<GlobalResponse<String>> authTokenExpiredHandle(
-            AuthTokenExpiredException exception
-    ) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-            GlobalResponse.<String>builder()
-            .code("E22")
-            .message("AUTH_TOKEN_EXPIRED")
-            .data(exception.getMessage())
-            .build()
-        );
-    }
-
-    @ExceptionHandler(UserEmailDuplicatedException.class)
-    public ResponseEntity<GlobalResponse<String>> userEmailDuplicatedHandle(
-            UserEmailDuplicatedException exception
-    ) {
-        return ResponseEntity
-            .status(HttpStatus.CONFLICT)
-            .body(GlobalResponse.<String>builder()
-                .code("E30")
-                .message("USER_EMAIL_DUPLICATED")
-                .data(exception.getMessage())
-                .build());
-    }
-
-    @ExceptionHandler(UserPhoneDuplicatedException.class)
-    public ResponseEntity<GlobalResponse<String>> userPhoneDuplicatedException(
-            UserPhoneDuplicatedException exception
-    ) {
-        return ResponseEntity
-            .status(HttpStatus.CONFLICT)
-            .body(GlobalResponse.<String>builder()
-                .code("E30")
-                .message("USER_PHONE_DUPLICATED")
-                .data(exception.getMessage())
-                .build());
-    }
-
-    @ExceptionHandler(UserPasswordMismatchException.class)
-    public ResponseEntity<GlobalResponse<String>> userPasswordMismatchHandle(
-            UserPasswordMismatchException exception
-    ) {
-        return ResponseEntity
-            .badRequest()
-            .body(GlobalResponse.<String>builder()
-                .code("E31")
-                .message("USER_PASSWORD_MISMATCH")
-                .data(exception.getMessage())
-                .build()
-            );
-    }
-
-    @ExceptionHandler(UserInvalidPasswordException.class)
-    public ResponseEntity<GlobalResponse<String>> userInvalidPasswordHandle(
-            UserInvalidPasswordException exception
-    ) {
-        return ResponseEntity
-            .badRequest()
-            .body(GlobalResponse.<String>builder()
-                .code("E32")
-                .message("USER_INVALID_PASSWORD")
-                .data(exception.getMessage())
-                .build()
-            );
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<GlobalResponse<String>> othersHandle(Exception e) {
-        log.error("시스템 에러: {}\n{}", e.getMessage(), Arrays.toString(e.getStackTrace()));
-
-        return ResponseEntity.status(500).body(
-            GlobalResponse.<String>builder()
-                .code("E99")
-                .message("시스템 에러")
-                .data("현재 서비스 이용이 불가합니다. 잠시 후 다시 시도해 주십시오.")
-                .build()
-        );
-    }
-
 
     // =========================
     // E10 요청 검증 관련
@@ -173,6 +68,7 @@ public class GlobalExceptionHandler {
         );
     }
 
+
     @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
     public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> httpMessageNotReadableHandle(
             HttpMessageNotReadableException e
@@ -196,6 +92,171 @@ public class GlobalExceptionHandler {
                 "필수 요청 파라미터가 누락되었습니다. (" + e.getParameterName() + ")"
         );
     }
+
+
+    @ExceptionHandler(AuthLoginRequiredException.class)
+    public ResponseEntity<GlobalResponse<String>> authLoginRequiredHandle(
+            AuthLoginRequiredException exception
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(GlobalResponse.<String>builder()
+                        .code("E20")
+                        .message("AUTH_LOGIN_REQUIRED")
+                        .data(exception.getMessage())
+                        .build());
+    }
+
+    @ExceptionHandler(AuthLoginFailedException.class)
+    public ResponseEntity<GlobalResponse<String>> authLoginFailedHandle(
+            AuthLoginFailedException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                GlobalResponse.<String>builder()
+                        .code("E21")
+                        .message("AUTH_LOGIN_FAILED")
+                        .data(exception.getMessage())
+                        .build()
+        );
+    }
+
+    @ExceptionHandler(AuthTokenExpiredException.class)
+    public ResponseEntity<GlobalResponse<String>> authTokenExpiredHandle(
+            AuthTokenExpiredException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                GlobalResponse.<String>builder()
+                        .code("E22")
+                        .message("AUTH_TOKEN_EXPIRED")
+                        .data(exception.getMessage())
+                        .build()
+        );
+    }
+
+    @ExceptionHandler(UserEmailDuplicatedException.class)
+    public ResponseEntity<GlobalResponse<String>> userEmailDuplicatedHandle(
+            UserEmailDuplicatedException exception
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(GlobalResponse.<String>builder()
+                        .code("E30")
+                        .message("USER_EMAIL_DUPLICATED")
+                        .data(exception.getMessage())
+                        .build());
+    }
+
+    @ExceptionHandler(UserPhoneDuplicatedException.class)
+    public ResponseEntity<GlobalResponse<String>> userPhoneDuplicatedException(
+            UserPhoneDuplicatedException exception
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(GlobalResponse.<String>builder()
+                        .code("E30")
+                        .message("USER_PHONE_DUPLICATED")
+                        .data(exception.getMessage())
+                        .build());
+    }
+
+    @ExceptionHandler(UserPasswordMismatchException.class)
+    public ResponseEntity<GlobalResponse<String>> userPasswordMismatchHandle(
+            UserPasswordMismatchException exception
+    ) {
+        return ResponseEntity
+                .badRequest()
+                .body(GlobalResponse.<String>builder()
+                        .code("E31")
+                        .message("USER_PASSWORD_MISMATCH")
+                        .data(exception.getMessage())
+                        .build()
+                );
+    }
+
+    @ExceptionHandler(UserInvalidPasswordException.class)
+    public ResponseEntity<GlobalResponse<String>> userInvalidPasswordHandle(
+            UserInvalidPasswordException exception
+    ) {
+        return ResponseEntity
+                .badRequest()
+                .body(GlobalResponse.<String>builder()
+                        .code("E32")
+                        .message("USER_INVALID_PASSWORD")
+                        .data(exception.getMessage())
+                        .build()
+                );
+    }
+
+    // =========================
+    // E40 체크리스트/업체 조회 관련
+    // =========================
+
+    // E40: CHECKLIST_REQUIRED_MISSING
+    @ExceptionHandler(ChecklistRequiredMissingException.class)
+    public ResponseEntity<GlobalResponse<List<String>>> checklistRequiredMissingHandle(ChecklistRequiredMissingException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(GlobalResponse.<List<String>>builder()
+                        .code("E40")
+                        .message("CHECKLIST_REQUIRED_MISSING")
+                        .data(List.of(e.getMessage()))
+                        .build());
+    }
+
+    // E41: CHECKLIST_DATE_TOO_SOON
+    @ExceptionHandler(ChecklistDateTooSoonException.class)
+    public ResponseEntity<GlobalResponse<List<String>>> checklistDateTooSoonHandle(ChecklistDateTooSoonException e) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(GlobalResponse.<List<String>>builder()
+                        .code("E41")
+                        .message("CHECKLIST_DATE_TOO_SOON")
+                        .data(List.of(e.getMessage()))
+                        .build());
+    }
+
+    // E42: CHECKLIST_INVALID_FORMAT
+    @ExceptionHandler(ChecklistInvalidFormatException.class)
+    public ResponseEntity<GlobalResponse<List<String>>> checklistInvalidFormatHandle(ChecklistInvalidFormatException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(GlobalResponse.<List<String>>builder()
+                        .code("E42")
+                        .message("CHECKLIST_INVALID_FORMAT")
+                        .data(List.of(e.getMessage()))
+                        .build());
+    }
+
+    // E43: STORE_NOT_FOUND
+    @ExceptionHandler(StoreNotFoundException.class)
+    public ResponseEntity<GlobalResponse<List<String>>> storeNotFoundHandle(StoreNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(GlobalResponse.<List<String>>builder()
+                        .code("E43")
+                        .message("STORE_NOT_FOUND")
+                        .data(List.of(e.getMessage()))
+                        .build());
+    }
+
+    // E44: STORE_MENU_REQUIRED
+    @ExceptionHandler(StoreMenuRequiredException.class)
+    public ResponseEntity<GlobalResponse<List<String>>> storeMenuRequiredHandle(StoreMenuRequiredException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(GlobalResponse.<List<String>>builder()
+                        .code("E44")
+                        .message("STORE_MENU_REQUIRED")
+                        .data(List.of(e.getMessage()))
+                        .build());
+    }
+
+    // E45: STORE_MENU_INVALID
+    @ExceptionHandler(StoreMenuInvalidException.class)
+    public ResponseEntity<GlobalResponse<List<String>>> storeMenuInvalidHandle(StoreMenuInvalidException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(GlobalResponse.<List<String>>builder()
+                        .code("E45")
+                        .message("STORE_MENU_INVALID")
+                        .data(List.of(e.getMessage()))
+                        .build());
+    }
+
 
     // =========================
     // E50 예약 관련
@@ -564,6 +625,19 @@ public class GlobalExceptionHandler {
                 "E93",
                 "INVALID_ARGUMENT",
                 e.getMessage()
+        );
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<GlobalResponse<String>> othersHandle(Exception e) {
+        log.error("시스템 에러: {}\n{}", e.getMessage(), Arrays.toString(e.getStackTrace()));
+
+        return ResponseEntity.status(500).body(
+                GlobalResponse.<String>builder()
+                        .code("E99")
+                        .message("시스템 에러")
+                        .data("현재 서비스 이용이 불가합니다. 잠시 후 다시 시도해 주십시오.")
+                        .build()
         );
     }
 
