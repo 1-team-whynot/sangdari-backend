@@ -1,7 +1,7 @@
 package com.sangdari.global.exception;
 
 import com.sangdari.global.exception.custom.*;
-import com.sangdari.global.responses.GlobalResponse;
+import com.sangdari.global.response.GlobalResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,24 +36,35 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(400).body(
             GlobalResponse.<Map<String, String>>builder()
-            .code("E10")
-            .message("VALIDATION_FAILED")
-            .data(errors)
-            .build()
+                .code("E10")
+                .message("VALIDATION_FAILED")
+                .data(errors)
+                .build()
         );
+    }
+
+    @ExceptionHandler(CommonNotFoundException.class)
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> commonNotFoundHandle(
+            CommonNotFoundException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+            GlobalResponse.<String>builder()
+                .code("E20")
+                .message("AUTH_LOGIN_REQUIRED")
+                .data(exception.getMessage())
+                .build());
     }
 
     @ExceptionHandler(AuthLoginRequiredException.class)
     public ResponseEntity<GlobalResponse<String>> authLoginRequiredHandle(
             AuthLoginRequiredException exception
     ) {
-        return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(GlobalResponse.<String>builder()
-                    .code("E20")
-                    .message("AUTH_LOGIN_REQUIRED")
-                    .data(exception.getMessage())
-                    .build());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+            GlobalResponse.<String>builder()
+                .code("E20")
+                .message("AUTH_LOGIN_REQUIRED")
+                .data(exception.getMessage())
+                .build());
     }
 
     @ExceptionHandler(AuthLoginFailedException.class)
@@ -62,10 +73,10 @@ public class GlobalExceptionHandler {
     ) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
             GlobalResponse.<String>builder()
-            .code("E21")
-            .message("AUTH_LOGIN_FAILED")
-            .data(exception.getMessage())
-            .build()
+                .code("E21")
+                .message("AUTH_LOGIN_FAILED")
+                .data(exception.getMessage())
+                .build()
         );
     }
 
@@ -75,10 +86,10 @@ public class GlobalExceptionHandler {
     ) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
             GlobalResponse.<String>builder()
-            .code("E22")
-            .message("AUTH_TOKEN_EXPIRED")
-            .data(exception.getMessage())
-            .build()
+                .code("E22")
+                .message("AUTH_TOKEN_EXPIRED")
+                .data(exception.getMessage())
+                .build()
         );
     }
 
@@ -86,9 +97,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<GlobalResponse<String>> userEmailDuplicatedHandle(
             UserEmailDuplicatedException exception
     ) {
-        return ResponseEntity
-            .status(HttpStatus.CONFLICT)
-            .body(GlobalResponse.<String>builder()
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+            GlobalResponse.<String>builder()
                 .code("E30")
                 .message("USER_EMAIL_DUPLICATED")
                 .data(exception.getMessage())
@@ -99,9 +109,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<GlobalResponse<String>> userPhoneDuplicatedException(
             UserPhoneDuplicatedException exception
     ) {
-        return ResponseEntity
-            .status(HttpStatus.CONFLICT)
-            .body(GlobalResponse.<String>builder()
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+            GlobalResponse.<String>builder()
                 .code("E30")
                 .message("USER_PHONE_DUPLICATED")
                 .data(exception.getMessage())
@@ -112,25 +121,50 @@ public class GlobalExceptionHandler {
     public ResponseEntity<GlobalResponse<String>> userPasswordMismatchHandle(
             UserPasswordMismatchException exception
     ) {
-        return ResponseEntity
-            .badRequest()
-            .body(GlobalResponse.<String>builder()
+        return ResponseEntity.badRequest().body(
+            GlobalResponse.<String>builder()
                 .code("E31")
                 .message("USER_PASSWORD_MISMATCH")
                 .data(exception.getMessage())
                 .build()
-            );
+        );
     }
 
     @ExceptionHandler(UserInvalidPasswordException.class)
     public ResponseEntity<GlobalResponse<String>> userInvalidPasswordHandle(
             UserInvalidPasswordException exception
     ) {
-        return ResponseEntity
-            .badRequest()
-            .body(GlobalResponse.<String>builder()
+        return ResponseEntity.badRequest().body(
+            GlobalResponse.<String>builder()
                 .code("E32")
                 .message("USER_INVALID_PASSWORD")
+                .data(exception.getMessage())
+                .build()
+            );
+    }
+
+    @ExceptionHandler(UserCurrentPasswordMismatchException.class)
+    public ResponseEntity<GlobalResponse<String>> userCurrentPasswordMismatchHandle(
+            UserCurrentPasswordMismatchException exception
+    ) {
+        return ResponseEntity.badRequest().body(
+            GlobalResponse.<String>builder()
+                .code("E33")
+                .message("USER_CURRENT_PASSWORD_MISMATCH")
+                .data(exception.getMessage())
+                .build()
+            );
+    }
+
+
+    @ExceptionHandler(UserWithdrawBlockedException.class)
+    public ResponseEntity<GlobalResponse<String>> userWithdrawBlockedHandle(
+            UserWithdrawBlockedException exception
+    ) {
+        return ResponseEntity.badRequest().body(
+            GlobalResponse.<String>builder()
+                .code("E34")
+                .message("USER_WITHDRAW_BLOCKED")
                 .data(exception.getMessage())
                 .build()
             );
@@ -155,7 +189,7 @@ public class GlobalExceptionHandler {
     // =========================
 
     @ExceptionHandler(org.springframework.validation.BindException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<Map<String, String>>> bindHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<Map<String, String>>> bindHandle(
             BindException e
     ) {
         Map<String, String> errors = new LinkedHashMap<>();
@@ -165,7 +199,7 @@ public class GlobalExceptionHandler {
         }
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                com.sangdari.global.responses.GlobalResponse.<Map<String, String>>builder()
+                com.sangdari.global.response.GlobalResponse.<Map<String, String>>builder()
                         .code("E11")
                         .message("BINDING_FAILED")
                         .data(errors)
@@ -174,7 +208,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> httpMessageNotReadableHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> httpMessageNotReadableHandle(
             HttpMessageNotReadableException e
     ) {
         return error(
@@ -186,7 +220,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(org.springframework.web.bind.MissingServletRequestParameterException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> missingServletRequestParameterHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> missingServletRequestParameterHandle(
             MissingServletRequestParameterException e
     ) {
         return error(
@@ -202,7 +236,7 @@ public class GlobalExceptionHandler {
     // =========================
 
     @ExceptionHandler(ReservationNotFoundException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> reservationNotFoundHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> reservationNotFoundHandle(
             ReservationNotFoundException e
     ) {
         return error(
@@ -214,7 +248,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ReservationInvalidStatusException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> reservationInvalidStatusHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> reservationInvalidStatusHandle(
             ReservationInvalidStatusException e
     ) {
         return error(
@@ -226,7 +260,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ReservationPaymentInfoNotFoundException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> reservationPaymentInfoNotFoundHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> reservationPaymentInfoNotFoundHandle(
             ReservationPaymentInfoNotFoundException e
     ) {
         return error(
@@ -238,7 +272,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ReservationOwnerMismatchException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> reservationOwnerMismatchHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> reservationOwnerMismatchHandle(
             ReservationOwnerMismatchException e
     ) {
         return error(
@@ -250,7 +284,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ReservationAlreadyCompletedException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> reservationAlreadyCompletedHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> reservationAlreadyCompletedHandle(
             ReservationAlreadyCompletedException e
     ) {
         return error(
@@ -262,7 +296,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ReservationAlreadyCanceledException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> reservationAlreadyCanceledHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> reservationAlreadyCanceledHandle(
             ReservationAlreadyCanceledException e
     ) {
         return error(
@@ -278,7 +312,7 @@ public class GlobalExceptionHandler {
     // =========================
 
     @ExceptionHandler(PaymentNotFoundException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> paymentNotFoundHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> paymentNotFoundHandle(
             PaymentNotFoundException e
     ) {
         return error(
@@ -290,7 +324,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(PaymentDuplicatedException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> paymentDuplicatedHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> paymentDuplicatedHandle(
             PaymentDuplicatedException e
     ) {
         return error(
@@ -302,7 +336,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(PaymentInvalidStatusException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> paymentInvalidStatusHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> paymentInvalidStatusHandle(
             PaymentInvalidStatusException e
     ) {
         return error(
@@ -314,7 +348,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(PaymentAmountMismatchException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> paymentAmountMismatchHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> paymentAmountMismatchHandle(
             PaymentAmountMismatchException e
     ) {
         return error(
@@ -326,7 +360,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(PaymentFailedException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> paymentFailedHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> paymentFailedHandle(
             PaymentFailedException e
     ) {
         return error(
@@ -338,7 +372,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(PaymentTypeInvalidException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> paymentTypeInvalidHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> paymentTypeInvalidHandle(
             PaymentTypeInvalidException e
     ) {
         return error(
@@ -350,7 +384,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(PaymentAmountInvalidException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> paymentAmountInvalidHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> paymentAmountInvalidHandle(
             PaymentAmountInvalidException e
     ) {
         return error(
@@ -362,7 +396,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(PaymentOrderIdDuplicatedException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> paymentOrderIdDuplicatedHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> paymentOrderIdDuplicatedHandle(
             PaymentOrderIdDuplicatedException e
     ) {
         return error(
@@ -374,7 +408,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(PaymentAlreadyConfirmedException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> paymentAlreadyConfirmedHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> paymentAlreadyConfirmedHandle(
             PaymentAlreadyConfirmedException e
     ) {
         return error(
@@ -386,7 +420,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(PaymentCancelNotSupportedException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> paymentCancelNotSupportedHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> paymentCancelNotSupportedHandle(
             PaymentCancelNotSupportedException e
     ) {
         return error(
@@ -402,7 +436,7 @@ public class GlobalExceptionHandler {
     // =========================
 
     @ExceptionHandler(TossPaymentConfirmFailedException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> tossPaymentConfirmFailedHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> tossPaymentConfirmFailedHandle(
             TossPaymentConfirmFailedException e
     ) {
         return error(
@@ -414,7 +448,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(TossPaymentApiException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> tossPaymentApiHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> tossPaymentApiHandle(
             TossPaymentApiException e
     ) {
         return error(
@@ -426,7 +460,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(TossPaymentTimeoutException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> tossPaymentTimeoutHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> tossPaymentTimeoutHandle(
             TossPaymentTimeoutException e
     ) {
         return error(
@@ -438,7 +472,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(TossPaymentInvalidResponseException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> tossPaymentInvalidResponseHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> tossPaymentInvalidResponseHandle(
             TossPaymentInvalidResponseException e
     ) {
         return error(
@@ -450,7 +484,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(TossPaymentUnauthorizedException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> tossPaymentUnauthorizedHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> tossPaymentUnauthorizedHandle(
             TossPaymentUnauthorizedException e
     ) {
         return error(
@@ -462,7 +496,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(TossPaymentRejectedException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> tossPaymentRejectedHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> tossPaymentRejectedHandle(
             TossPaymentRejectedException e
     ) {
         return error(
@@ -474,7 +508,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(TossPaymentAlreadyProcessedException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> tossPaymentAlreadyProcessedHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> tossPaymentAlreadyProcessedHandle(
             TossPaymentAlreadyProcessedException e
     ) {
         return error(
@@ -486,7 +520,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(TossPaymentCanceledException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> tossPaymentCanceledHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> tossPaymentCanceledHandle(
             TossPaymentCanceledException e
     ) {
         return error(
@@ -498,7 +532,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(TossPaymentNetworkException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> tossPaymentNetworkHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> tossPaymentNetworkHandle(
             TossPaymentNetworkException e
     ) {
         return error(
@@ -514,7 +548,7 @@ public class GlobalExceptionHandler {
     // =========================
 
     @ExceptionHandler(JsonProcessingException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> jsonProcessingHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> jsonProcessingHandle(
             JsonProcessingException e
     ) {
         log.error("JSON 처리 실패", e);
@@ -528,7 +562,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DatabaseOperationFailedException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> databaseOperationFailedHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> databaseOperationFailedHandle(
             DatabaseOperationFailedException e
     ) {
         log.error("DB 처리 실패", e);
@@ -542,7 +576,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ExternalApiException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> externalApiHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> externalApiHandle(
             ExternalApiException e
     ) {
         log.error("외부 API 처리 실패", e);
@@ -556,7 +590,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> illegalArgumentHandle(
+    public ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> illegalArgumentHandle(
             IllegalArgumentException e
     ) {
         return error(
@@ -571,14 +605,14 @@ public class GlobalExceptionHandler {
     // 공통 응답 생성 메서드
     // =========================
 
-    private ResponseEntity<com.sangdari.global.responses.GlobalResponse<String>> error(
+    private ResponseEntity<com.sangdari.global.response.GlobalResponse<String>> error(
             HttpStatus status,
             String code,
             String message,
             String data
     ) {
         return ResponseEntity.status(status).body(
-                com.sangdari.global.responses.GlobalResponse.<String>builder()
+                com.sangdari.global.response.GlobalResponse.<String>builder()
                         .code(code)
                         .message(message)
                         .data(data)

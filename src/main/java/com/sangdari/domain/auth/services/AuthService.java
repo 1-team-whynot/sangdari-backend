@@ -1,17 +1,14 @@
 package com.sangdari.domain.auth.services;
 
 import com.sangdari.domain.auth.mapper.AuthMapper;
+import com.sangdari.domain.auth.requests.AuthPasswordResetRequest;
 import com.sangdari.domain.auth.requests.LoginRequest;
 import com.sangdari.domain.auth.requests.SignupRequest;
 import com.sangdari.domain.auth.responses.AuthResponse;
 import com.sangdari.domain.user.entities.User;
 import com.sangdari.domain.user.mapper.UserMapper;
 import com.sangdari.domain.user.responses.UserResponse;
-import com.sangdari.global.exception.custom.AuthLoginFailedException;
-import com.sangdari.global.exception.custom.AuthTokenExpiredException;
-import com.sangdari.global.exception.custom.UserEmailDuplicatedException;
-import com.sangdari.global.exception.custom.UserPasswordMismatchException;
-import com.sangdari.global.exception.custom.UserPhoneDuplicatedException;
+import com.sangdari.global.exception.custom.*;
 import com.sangdari.global.security.cookie.CookieManager;
 import com.sangdari.global.security.jwt.JwtConfig;
 import com.sangdari.global.security.jwt.JwtProvider;
@@ -22,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.Exception;
 import java.util.Optional;
 
 @Service
@@ -131,5 +129,17 @@ public class AuthService {
 
     public boolean checkEmail(String email) {
         return userMapper.findByEmail(email) == null;
+    }
+
+    @Transactional
+    public void resetPassword(AuthPasswordResetRequest request) {
+        // 1. 회원 정보 일치 여부 확인
+        User user = userMapper.findByEmailAndNameAndPhone(request.email(), request.name(), request.phone());
+        if (user == null) {
+            throw new CommonNotFoundException("입력하신 정보와 일치하는 회원을 찾을 수 없습니다."); // E02
+        }
+
+        // 2. 새 비밀번호 암호화 및 업데이트
+        userMapper.updateUserPassword(user.getUserId(), passwordEncoder.encode(request.newPassword()));
     }
 }

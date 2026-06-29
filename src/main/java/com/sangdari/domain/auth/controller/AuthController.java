@@ -1,10 +1,11 @@
 package com.sangdari.domain.auth.controller;
 
+import com.sangdari.domain.auth.requests.AuthPasswordResetRequest;
 import com.sangdari.domain.auth.requests.LoginRequest;
 import com.sangdari.domain.auth.requests.SignupRequest;
 import com.sangdari.domain.auth.responses.AuthResponse;
 import com.sangdari.domain.auth.services.AuthService;
-import com.sangdari.global.responses.GlobalResponse;
+import com.sangdari.global.response.GlobalResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -71,5 +72,17 @@ public class AuthController {
                 .data(authService.checkEmail(email))
                 .build()
         );
+    }
+
+    @PutMapping("/find-password")
+    public ResponseEntity<GlobalResponse<Void>> resetPassword(
+            @Valid @RequestBody AuthPasswordResetRequest request
+    ) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(
+            GlobalResponse.<Void>builder()
+                .code("00")
+                .message("비밀번호가 재설정되었습니다.")
+                .build());
     }
 }

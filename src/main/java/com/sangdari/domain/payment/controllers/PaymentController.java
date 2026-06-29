@@ -6,7 +6,7 @@ import com.sangdari.domain.payment.requests.PaymentReadyRequest;
 import com.sangdari.domain.payment.responses.PaymentConfirmResponse;
 import com.sangdari.domain.payment.responses.PaymentReadyResponse;
 import com.sangdari.domain.payment.services.PaymentService;
-import com.sangdari.global.responses.GlobalResponse;
+import com.sangdari.global.response.GlobalResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

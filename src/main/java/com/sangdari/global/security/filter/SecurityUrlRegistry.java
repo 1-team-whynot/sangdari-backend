@@ -7,18 +7,19 @@ public final class SecurityUrlRegistry {
     // 블랙리스트 (인증 반드시 필요)
     // ----------------------------
     public static final String[] AUTH_REQUIRED_GET_URLS = {
-
+        "/api/users/info"
     };
     public static final String[] AUTH_REQUIRED_POST_URLS = {
 
     };
     public static final String[] AUTH_REQUIRED_PUT_URLS = {
-
+        "/api/users/info"
     };
     public static final String[] AUTH_REQUIRED_PATCH_URLS = {
 
     };
     public static final String[] AUTH_REQUIRED_DELETE_URLS = {
-
+        "/api/users/info"
+        , "/api/users/withdraw"
     };
 }
