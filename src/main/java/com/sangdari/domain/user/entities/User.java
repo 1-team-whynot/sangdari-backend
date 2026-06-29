@@ -6,7 +6,7 @@ import lombok.Getter;
 @Getter
 @Builder
 public class User {
-    private Long userId;
+    private long userId;
     private String email;
     private String password;
     private String name;
