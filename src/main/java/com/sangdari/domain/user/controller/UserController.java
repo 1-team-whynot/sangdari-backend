@@ -56,7 +56,7 @@ public class UserController {
         );
     }
 
-    @PutMapping("/users/password")
+    @PutMapping("/users/password-change")
     public ResponseEntity<GlobalResponse<Void>> changePassword(
         @AuthenticationPrincipal Claims claims,
         @Valid @RequestBody UserPasswordChangeRequest request
