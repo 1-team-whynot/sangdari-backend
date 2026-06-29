@@ -70,8 +70,8 @@
                 AND s.max_headcount &gt;= #{storeListReq.maxHeadcount}
             </if>
 
-            <if test="storeListReq.isPowerAvailable != null and storeListReq.isPowerAvailable == true">
-                AND s.is_battery_supported = TRUE
+            <if test="storeListReq.isPowerAvailable != null and storeListReq.isPowerAvailable == false">
+                AND s.is_battery_supported = 1
             </if>
 
             <if test="storeListReq.selectedCategories != null and storeListReq.selectedCategories.size() > 0">

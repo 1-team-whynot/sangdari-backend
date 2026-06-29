@@ -18,7 +18,7 @@ public class StoreController {
     private final StoreService storeService;
 
     // 전체 업체 목록 데이터
-    @GetMapping("allStores")
+    @GetMapping("/allStores")
     public ResponseEntity<GlobalResponse<StoreListRes>> allStoreList(AllStoreListReq allStoreListReq) {
 
         StoreListRes storeListRes = storeService.allStoreList(allStoreListReq);
