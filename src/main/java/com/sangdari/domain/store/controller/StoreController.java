@@ -5,7 +5,7 @@ import com.sangdari.domain.store.requests.StoreListReq;
 import com.sangdari.domain.store.responses.StoreDetailRes;
 import com.sangdari.domain.store.responses.StoreListRes;
 import com.sangdari.domain.store.services.StoreService;
-import com.sangdari.global.responses.GlobalResponse;
+import com.sangdari.global.response.GlobalResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

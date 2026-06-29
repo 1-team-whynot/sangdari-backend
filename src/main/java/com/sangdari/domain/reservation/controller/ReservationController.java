@@ -4,7 +4,7 @@ import com.sangdari.domain.reservation.requests.ReservationCreateRequest;
 import com.sangdari.domain.reservation.responses.ReservationCreateResponse;
 import com.sangdari.domain.reservation.services.ReservationService;
 import com.sangdari.global.exception.custom.AuthLoginRequiredException;
-import com.sangdari.global.responses.GlobalResponse;
+import com.sangdari.global.response.GlobalResponse;
 import io.jsonwebtoken.Claims;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
