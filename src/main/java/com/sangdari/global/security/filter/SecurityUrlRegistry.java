@@ -14,6 +14,7 @@ public final class SecurityUrlRegistry {
     };
     public static final String[] AUTH_REQUIRED_PUT_URLS = {
         "/api/users/info"
+        , "api/users/password"
     };
     public static final String[] AUTH_REQUIRED_PATCH_URLS = {
 
