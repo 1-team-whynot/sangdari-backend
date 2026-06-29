@@ -12,7 +12,7 @@ public record AllStoreListReq(
 ) {
     public AllStoreListReq(Integer page, Integer limit) {
         this.page = (page != null && page > 0) ? page : 1;
-        this.limit = (limit != null && limit > 0) ? limit : 6;
+        this.limit = (limit != null && limit > 0) ? limit : 4;
     }
 
     // 쿼리에서 사용할 offset 구하기
