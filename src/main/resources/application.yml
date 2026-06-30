@@ -21,7 +21,7 @@ cors:
 
 storage:
   files:
-    location: ./storage/files
+    location: /storage/files
 
 toss:
   payments:

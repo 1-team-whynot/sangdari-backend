@@ -13,6 +13,7 @@ public final class SecurityUrlRegistry {
     public static final String[] AUTH_REQUIRED_POST_URLS = {
         "/api/reservations"
         , "/api/auth/logout"
+        , "/api/users/password-verify"
     };
     public static final String[] AUTH_REQUIRED_PUT_URLS = {
         "/api/users/info-update"

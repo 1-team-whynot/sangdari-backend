@@ -1,6 +1,7 @@
 package com.sangdari.domain.auth.controller;
 
 import com.sangdari.domain.auth.requests.AuthPasswordResetRequest;
+import com.sangdari.domain.auth.requests.AuthUserVerifyRequest;
 import com.sangdari.domain.auth.requests.LoginRequest;
 import com.sangdari.domain.auth.requests.SignupRequest;
 import com.sangdari.domain.auth.responses.AuthResponse;
@@ -101,6 +102,18 @@ public class AuthController {
             GlobalResponse.<Void>builder()
                 .code("00")
                 .message("비밀번호가 재설정되었습니다.")
+                .build());
+    }
+
+    @PostMapping("/auth/verify-user")
+    public ResponseEntity<GlobalResponse<Void>> verifyUser(
+            @Valid @RequestBody AuthUserVerifyRequest request
+    ) {
+        authService.verifyUser(request);
+        return ResponseEntity.ok(
+            GlobalResponse.<Void>builder()
+                .code("00")
+                .message("회원 정보가 확인되었습니다.")
                 .build());
     }
 }

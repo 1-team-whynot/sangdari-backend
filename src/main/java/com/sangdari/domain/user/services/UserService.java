@@ -87,4 +87,12 @@ public class UserService {
         // 3. Soft Delete 처리
         userMapper.withdrawUser(userId);
     }
+
+    public void verifyPassword(Long userId, String currentPassword) {
+        User user = userMapper.findByPk(userId);
+        if (user == null) throw new CommonNotFoundException("사용자를 찾을 수 없습니다.");
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new UserCurrentPasswordMismatchException();
+        }
+    }
 }

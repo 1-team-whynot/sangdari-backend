@@ -2,6 +2,7 @@ package com.sangdari.domain.auth.services;
 
 import com.sangdari.domain.auth.mapper.AuthMapper;
 import com.sangdari.domain.auth.requests.AuthPasswordResetRequest;
+import com.sangdari.domain.auth.requests.AuthUserVerifyRequest;
 import com.sangdari.domain.auth.requests.LoginRequest;
 import com.sangdari.domain.auth.requests.SignupRequest;
 import com.sangdari.domain.auth.responses.AuthResponse;
@@ -176,5 +177,12 @@ public class AuthService {
 
         // 2. 새 비밀번호 암호화 및 업데이트
         userMapper.updateUserPassword(user.getUserId(), passwordEncoder.encode(request.newPassword()));
+    }
+
+    public void verifyUser(AuthUserVerifyRequest request) {
+        User user = userMapper.findByEmailAndNameAndPhone(request.email(), request.name(), request.phone());
+        if (user == null) {
+            throw new CommonNotFoundException("입력하신 정보와 일치하는 회원을 찾을 수 없습니다."); // E02
+        }
     }
 }

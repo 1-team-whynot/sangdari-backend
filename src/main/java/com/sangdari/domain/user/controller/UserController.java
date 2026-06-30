@@ -1,6 +1,7 @@
 package com.sangdari.domain.user.controller;
 
 import com.sangdari.domain.user.requests.UserPasswordChangeRequest;
+import com.sangdari.domain.user.requests.UserPasswordVerifyRequest;
 import com.sangdari.domain.user.requests.UserUpdateRequest;
 import com.sangdari.domain.user.requests.UserWithdrawRequest;
 import com.sangdari.domain.user.responses.UserResponse;
@@ -87,5 +88,19 @@ public class UserController {
                 .data(null)
                 .build()
         );
+    }
+
+    @PostMapping("/users/password-verify")
+    public ResponseEntity<GlobalResponse<Void>> verifyPassword(
+        @AuthenticationPrincipal Claims claims,
+        @Valid @RequestBody UserPasswordVerifyRequest request
+    ) {
+        Long userId = Long.parseLong(claims.getSubject());
+        userService.verifyPassword(userId, request.currentPassword());
+        return ResponseEntity.ok(
+            GlobalResponse.<Void>builder()
+                .code("00")
+                .message("비밀번호가 확인되었습니다.")
+                .build());
     }
 }
