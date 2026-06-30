@@ -71,7 +71,7 @@ public class AuthController {
     ) {
         authService.signup(signupRequest);
 
-        return ResponseEntity.status(200).body(
+        return ResponseEntity.status(201).body(
             GlobalResponse.<String>builder()
                 .code("00")
                 .message("회원가입 완료")
