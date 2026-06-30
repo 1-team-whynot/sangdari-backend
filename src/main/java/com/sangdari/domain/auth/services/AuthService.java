@@ -15,6 +15,8 @@ import com.sangdari.global.security.jwt.JwtProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -76,13 +78,24 @@ public class AuthService {
 
         authMapper.updateRefreshToken(user.getUserId(), newRefreshToken);
 
-        cookieManager.setCookie(
-            response
-            , jwtConfig.refreshTokenCookieName()
-            , newRefreshToken
-            , jwtConfig.refreshTokenCookieExpiry()
-            , jwtConfig.reissueUri()
-        );
+//        cookieManager.setCookie(
+//            response
+//            , jwtConfig.refreshTokenCookieName()
+//            , newRefreshToken
+//            , jwtConfig.refreshTokenCookieExpiry()
+//            , jwtConfig.reissueUri()
+//        );
+
+        ResponseCookie cookie = ResponseCookie.from(jwtConfig.refreshTokenCookieName(), newRefreshToken)
+            .httpOnly(true)
+            .secure(true)       // 👈 필수: HTTPS 환경(또는 localhost)에서만 전송
+            .sameSite("None")   // 👈 필수: 외부 사이트에서 돌아올 때 쿠키 전송 허용
+            .path(jwtConfig.reissueUri()) // 예: "/api/reissue-token"
+            .maxAge(jwtConfig.refreshTokenCookieExpiry())
+            .build();
+
+        // 응답 헤더에 직접 쿠키 세팅
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         // 리턴
         return AuthResponse.builder()
