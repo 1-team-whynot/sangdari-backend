@@ -40,6 +40,9 @@
         WHERE r.user_id = #{userId}
           AND r.deleted_at IS NULL
           AND s.deleted_at IS NULL
+        <if test="status != null">
+          AND r.status = #{status}
+        </if>
     </select>
 
     <select id="findMyReservations" resultMap="ReservationMyItemResponseMap">
@@ -64,6 +67,9 @@
         WHERE r.user_id = #{userId}
           AND r.deleted_at IS NULL
           AND s.deleted_at IS NULL
+        <if test="status != null">
+          AND r.status = #{status}
+        </if>
         ORDER BY r.reservation_id DESC
         LIMIT #{limit} OFFSET #{offset}
     </select>

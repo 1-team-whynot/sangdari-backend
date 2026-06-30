@@ -5,6 +5,7 @@ import com.sangdari.domain.reservation.requests.ReservationMyListRequest;
 import com.sangdari.domain.reservation.responses.ReservationCreateResponse;
 import com.sangdari.domain.reservation.responses.ReservationMyListResponse;
 import com.sangdari.domain.reservation.services.ReservationService;
+import com.sangdari.domain.reservation.type.ReservationStatus;
 import com.sangdari.global.exception.custom.AuthLoginRequiredException;
 import com.sangdari.global.response.GlobalResponse;
 import io.jsonwebtoken.Claims;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RequiredArgsConstructor
@@ -28,10 +30,12 @@ public class ReservationController {
     @GetMapping("/my")
     public ResponseEntity<GlobalResponse<ReservationMyListResponse>> getMyReservations(
             Authentication authentication,
-            @Valid @ModelAttribute ReservationMyListRequest reservationMyListRequest
+            @Valid @ModelAttribute ReservationMyListRequest reservationMyListRequest,
+            @RequestParam(required = false) ReservationStatus status
     ) {
         Long userId = getLoginUserId(authentication);
-        ReservationMyListResponse reservationMyListResponse = reservationService.getMyReservations(userId, reservationMyListRequest);
+        ReservationMyListResponse reservationMyListResponse =
+                reservationService.getMyReservations(userId, reservationMyListRequest.withStatus(status));
 
         return ResponseEntity.status(200).body(
                 GlobalResponse.<ReservationMyListResponse>builder()

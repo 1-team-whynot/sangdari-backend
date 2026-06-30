@@ -1,5 +1,6 @@
 package com.sangdari.domain.reservation.requests;
 
+import com.sangdari.domain.reservation.type.ReservationStatus;
 import jakarta.validation.constraints.Min;
 
 public record ReservationMyListRequest(
@@ -7,7 +8,9 @@ public record ReservationMyListRequest(
         Integer page,
 
         @Min(value = 1, message = "출력 개수는 1 이상이어야 합니다.")
-        Integer limit
+        Integer limit,
+
+        ReservationStatus status
 ) {
     private static final int DEFAULT_PAGE = 1;
     private static final int DEFAULT_LIMIT = 10;
@@ -22,5 +25,9 @@ public record ReservationMyListRequest(
 
     public int getOffset() {
         return (pageOrDefault() - 1) * limitOrDefault();
+    }
+
+    public ReservationMyListRequest withStatus(ReservationStatus status) {
+        return new ReservationMyListRequest(page, limit, status);
     }
 }

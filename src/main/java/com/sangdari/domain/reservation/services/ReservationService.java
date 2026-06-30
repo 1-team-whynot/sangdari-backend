@@ -66,8 +66,10 @@ public class ReservationService {
         int limit = reservationMyListRequest.limitOrDefault();
         int offset = reservationMyListRequest.getOffset();
 
-        long totalCount = reservationQueryMapper.countMyReservations(userId);
-        List<ReservationMyItemResponse> reservations = reservationQueryMapper.findMyReservations(userId, limit, offset);
+        ReservationStatus status = reservationMyListRequest.status();
+
+        long totalCount = reservationQueryMapper.countMyReservations(userId, status);
+        List<ReservationMyItemResponse> reservations = reservationQueryMapper.findMyReservations(userId, status, limit, offset);
 
         List<Long> reservationIds = reservations.stream()
                 .map(ReservationMyItemResponse::getReservationId)

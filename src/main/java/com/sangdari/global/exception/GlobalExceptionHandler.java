@@ -13,6 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.lang.Exception;
 import java.lang.IllegalArgumentException;
@@ -66,6 +67,18 @@ public class GlobalExceptionHandler {
                         .message("BINDING_FAILED")
                         .data(errors)
                         .build()
+        );
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<GlobalResponse<String>> methodArgumentTypeMismatchHandle(
+            MethodArgumentTypeMismatchException e
+    ) {
+        return error(
+                HttpStatus.BAD_REQUEST,
+                "E11",
+                "BINDING_FAILED",
+                "요청 파라미터 형식이 올바르지 않습니다. (" + e.getName() + ")"
         );
     }
 
