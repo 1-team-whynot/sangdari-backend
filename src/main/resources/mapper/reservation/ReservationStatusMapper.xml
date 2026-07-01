@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.sangdari.domain.reservation.mapper.ReservationStatusMapper">
+    <resultMap id="ReservationCancelInfoMap"
+               type="com.sangdari.domain.reservation.entities.ReservationCancelInfo">
+        <id column="reservation_id" property="reservationId"/>
+        <result column="user_id" property="userId"/>
+        <result column="status" property="status"/>
+        <result column="event_start_date" property="eventStartDate"/>
+    </resultMap>
+
+    <select id="findForCancelUpdate" resultMap="ReservationCancelInfoMap">
+        SELECT
+            reservation_id,
+            user_id,
+            status,
+            event_start_date
+        FROM reservations
+        WHERE reservation_id = #{reservationId}
+          AND deleted_at IS NULL
+        FOR UPDATE
+    </select>
+
+    <select id="findDoneDepositAmount" resultType="java.lang.Long">
+        SELECT total_amount
+        FROM payments
+        WHERE reservation_id = #{reservationId}
+          AND payment_type = 'DEPOSIT'
+          AND status = 'DONE'
+          AND deleted_at IS NULL
+        ORDER BY payment_id DESC
+        LIMIT 1
+    </select>
+
+    <update id="updateStatusToCanceled">
+        UPDATE reservations
+        SET status = 'CANCELED',
+            updated_at = NOW()
+        WHERE reservation_id = #{reservationId}
+          AND status = #{currentStatus}
+          AND deleted_at IS NULL
+    </update>
+
+    <select id="findConfirmedWithoutDoneBalance" resultMap="ReservationCancelInfoMap">
+        SELECT
+            r.reservation_id,
+            r.user_id,
+            r.status,
+            r.event_start_date
+        FROM reservations r
+        WHERE r.status = 'CONFIRMED'
+          AND r.deleted_at IS NULL
+          AND NOT EXISTS (
+              SELECT 1
+              FROM payments p
+              WHERE p.reservation_id = r.reservation_id
+                AND p.payment_type = 'BALANCE'
+                AND p.status = 'DONE'
+                AND p.deleted_at IS NULL
+          )
+    </select>
+</mapper>

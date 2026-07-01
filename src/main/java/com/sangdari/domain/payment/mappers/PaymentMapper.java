@@ -2,9 +2,11 @@ package com.sangdari.domain.payment.mappers;
 
 import com.sangdari.domain.payment.entities.Payment;
 import com.sangdari.domain.payment.entities.PaymentReadyInfo;
+import com.sangdari.domain.payment.responses.PaymentReadyMenuResponse;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 @Mapper
@@ -12,6 +14,10 @@ public interface PaymentMapper {
 
     // 결제 준비 정보 조회
     PaymentReadyInfo findPaymentReadyInfoForUpdate(
+            @Param("reservationId") Long reservationId
+    );
+
+    List<PaymentReadyMenuResponse> findMenusByReservationId(
             @Param("reservationId") Long reservationId
     );
 
@@ -44,6 +50,7 @@ public interface PaymentMapper {
     // 예약 상태 변경
     int updateReservationStatus(
             @Param("reservationId") Long reservationId,
+            @Param("currentStatus") String currentStatus,
             @Param("status") String status
     );
 

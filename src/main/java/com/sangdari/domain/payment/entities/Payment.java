@@ -15,7 +15,7 @@ public class Payment {
     private String orderId;
     private String orderName;
 
-    private String paymentType; // DEPOSIT, BALANCE, FULL_PAYMENT
+    private String paymentType; // DEPOSIT, BALANCE
     private String method;      // CARD, EASY_PAY, TRANSFER 등
     private String status;      // READY, DONE, CANCELED, ABORTED 등
 

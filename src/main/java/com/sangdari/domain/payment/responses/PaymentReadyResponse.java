@@ -1,6 +1,8 @@
 package com.sangdari.domain.payment.responses;
 
 
+import java.util.List;
+
 public record PaymentReadyResponse(
         Long paymentId,
         String orderId,
@@ -8,6 +10,14 @@ public record PaymentReadyResponse(
         Long amount,
         String paymentType,
         String customerName,
-        String customerEmail
+        String customerEmail,
+        Long reservationId,
+        String storeName,
+        String eventStartDate,
+        String eventEndDate,
+        String eventLocation,
+        Long estimateAmount,
+        Long payableAmount,
+        List<PaymentReadyMenuResponse> menus
 ) {
 }

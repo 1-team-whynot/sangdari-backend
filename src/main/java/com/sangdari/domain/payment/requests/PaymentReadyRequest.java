@@ -9,7 +9,7 @@ public record PaymentReadyRequest(
     Long reservationId,
 
     @NotBlank(message = "결제 상태가 올바르지 않습니다.")
-    @Pattern(regexp = "^(DEPOSIT|BALANCE|FULL_PAYMENT)$")
+    @Pattern(regexp = "^(DEPOSIT|BALANCE)$")
     String paymentType
 ) {
 }

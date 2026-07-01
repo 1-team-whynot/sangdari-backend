@@ -2,6 +2,7 @@ package com.sangdari.domain.reservation.controller;
 
 import com.sangdari.domain.reservation.requests.ReservationCreateRequest;
 import com.sangdari.domain.reservation.requests.ReservationMyListRequest;
+import com.sangdari.domain.reservation.responses.ReservationCancelResponse;
 import com.sangdari.domain.reservation.responses.ReservationCreateResponse;
 import com.sangdari.domain.reservation.responses.ReservationMyListResponse;
 import com.sangdari.domain.reservation.services.ReservationService;
@@ -15,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -59,6 +62,24 @@ public class ReservationController {
                         .code("00")
                         .message("정상처리")
                         .data(reservationCreateResponse)
+                        .build()
+        );
+    }
+
+    @PatchMapping("/{reservationId}/cancel")
+    public ResponseEntity<GlobalResponse<ReservationCancelResponse>> cancelReservation(
+            Authentication authentication,
+            @PathVariable Long reservationId
+    ) {
+        Long userId = getLoginUserId(authentication);
+        ReservationCancelResponse reservationCancelResponse =
+                reservationService.cancelReservation(userId, reservationId);
+
+        return ResponseEntity.status(200).body(
+                GlobalResponse.<ReservationCancelResponse>builder()
+                        .code("00")
+                        .message("예약 취소 처리가 완료되었습니다.")
+                        .data(reservationCancelResponse)
                         .build()
         );
     }

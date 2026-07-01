@@ -8,6 +8,7 @@ import com.sangdari.domain.payment.requests.PaymentConfirmRequest;
 import com.sangdari.domain.payment.requests.PaymentMockConfirmRequest;
 import com.sangdari.domain.payment.requests.PaymentReadyRequest;
 import com.sangdari.domain.payment.responses.PaymentConfirmResponse;
+import com.sangdari.domain.payment.responses.PaymentReadyMenuResponse;
 import com.sangdari.domain.payment.responses.PaymentReadyResponse;
 import com.sangdari.domain.payment.responses.TossConfirmResponse;
 import com.sangdari.global.exception.custom.*;
@@ -15,20 +16,27 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
+    private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final PaymentMapper paymentMapper;
     private final TossPaymentClient tossPaymentClient;
 
     @Transactional
-    public PaymentReadyResponse ready(PaymentReadyRequest request) {
+    public PaymentReadyResponse ready(Long userId, PaymentReadyRequest request) {
         String paymentType = normalizePaymentType(request.paymentType());
 
         PaymentReadyInfo info = paymentMapper.findPaymentReadyInfoForUpdate(
@@ -39,7 +47,8 @@ public class PaymentService {
             throw new ReservationNotFoundException("결제 가능한 예약 정보를 찾을 수 없습니다.");
         }
 
-        validateReservationStatus(paymentType, info.getReservationStatus());
+        validatePaymentOwner(userId, info.getUserId());
+        validateReservationStatus(paymentType, info);
 
         Payment existingPayment = paymentMapper.findByReservationIdAndPaymentType(
                 info.getReservationId(),
@@ -51,15 +60,7 @@ public class PaymentService {
                 throw new PaymentDuplicatedException("이미 완료된 결제입니다.");
             }
 
-            return new PaymentReadyResponse(
-                    existingPayment.getPaymentId(),
-                    existingPayment.getOrderId(),
-                    existingPayment.getOrderName(),
-                    existingPayment.getTotalAmount(),
-                    existingPayment.getPaymentType(),
-                    info.getCustomerName(),
-                    info.getCustomerEmail()
-            );
+            return toReadyResponse(existingPayment, info);
         }
 
         Long amount = calculatePaymentAmount(paymentType, info);
@@ -86,24 +87,18 @@ public class PaymentService {
             throw new DatabaseOperationFailedException("결제 준비 데이터 저장에 실패했습니다.");
         }
 
-        return new PaymentReadyResponse(
-                payment.getPaymentId(),
-                payment.getOrderId(),
-                payment.getOrderName(),
-                payment.getTotalAmount(),
-                payment.getPaymentType(),
-                info.getCustomerName(),
-                info.getCustomerEmail()
-        );
+        return toReadyResponse(payment, info);
     }
 
     @Transactional
-    public PaymentConfirmResponse mockConfirm(PaymentMockConfirmRequest request) {
+    public PaymentConfirmResponse mockConfirm(Long userId, PaymentMockConfirmRequest request) {
         Payment payment = paymentMapper.findPaymentByOrderIdForUpdate(request.orderId());
 
         if (payment == null) {
             throw new PaymentNotFoundException("결제 정보를 찾을 수 없습니다.");
         }
+
+        validatePaymentOwner(userId, payment.getUserId());
 
         if ("DONE".equals(payment.getStatus())) {
             return toConfirmResponse(payment);
@@ -116,6 +111,9 @@ public class PaymentService {
         if (!Objects.equals(payment.getTotalAmount(), request.amount())) {
             throw new PaymentAmountMismatchException("결제 금액이 일치하지 않습니다.");
         }
+
+        PaymentReadyInfo info = findCurrentReadyInfo(payment);
+        validateReservationStatus(payment.getPaymentType(), info);
 
         String now = nowString();
 
@@ -143,9 +141,11 @@ public class PaymentService {
         }
 
         String nextReservationStatus = getNextReservationStatus(payment.getPaymentType());
+        String currentReservationStatus = getCurrentReservationStatus(payment.getPaymentType());
 
         int updatedReservationCount = paymentMapper.updateReservationStatus(
                 payment.getReservationId(),
+                currentReservationStatus,
                 nextReservationStatus
         );
 
@@ -157,11 +157,16 @@ public class PaymentService {
     }
 
     @Transactional
-    public PaymentConfirmResponse confirmTossPayment(PaymentConfirmRequest request) {
+    public PaymentConfirmResponse confirmTossPayment(Long userId, PaymentConfirmRequest request) {
 
         // 1. orderId로 우리 DB에 저장된 결제 정보 조회
-        Payment payment = paymentMapper.findByOrderId(request.orderId())
-                .orElseThrow(() -> new PaymentNotFoundException("결제 정보를 찾을 수 없습니다."));
+        Payment payment = paymentMapper.findPaymentByOrderIdForUpdate(request.orderId());
+
+        if (payment == null) {
+            throw new PaymentNotFoundException("결제 정보를 찾을 수 없습니다.");
+        }
+
+        validatePaymentOwner(userId, payment.getUserId());
 
         // 2. 이미 결제 완료된 건이면 Toss에 다시 승인 요청하지 않음
         if ("DONE".equals(payment.getStatus())) {
@@ -177,6 +182,9 @@ public class PaymentService {
         if (!payment.getTotalAmount().equals(request.amount())) {
             throw new PaymentAmountMismatchException("결제 금액이 일치하지 않습니다.");
         }
+
+        PaymentReadyInfo info = findCurrentReadyInfo(payment);
+        validateReservationStatus(payment.getPaymentType(), info);
 
         // 4. Toss Payments 실제 결제 승인 API 호출
         TossConfirmResponse tossResponse = tossPaymentClient.confirm(request);
@@ -211,9 +219,11 @@ public class PaymentService {
 
         // 8. 예약 상태를 결제 타입에 맞게 변경
         String nextReservationStatus = getNextReservationStatus(payment.getPaymentType());
+        String currentReservationStatus = getCurrentReservationStatus(payment.getPaymentType());
 
         int updatedReservationCount = paymentMapper.updateReservationStatus(
                 payment.getReservationId(),
+                currentReservationStatus,
                 nextReservationStatus
         );
 
@@ -234,14 +244,16 @@ public class PaymentService {
         }
 
         return switch (paymentType) {
-            case "DEPOSIT", "BALANCE", "FULL_PAYMENT" -> paymentType;
+            case "DEPOSIT", "BALANCE" -> paymentType;
             default -> throw new PaymentTypeInvalidException("지원하지 않는 결제 타입입니다.");
         };
     }
 
-    private void validateReservationStatus(String paymentType, String reservationStatus) {
+    private void validateReservationStatus(String paymentType, PaymentReadyInfo info) {
+        String reservationStatus = info.getReservationStatus();
+
         switch (paymentType) {
-            case "DEPOSIT", "FULL_PAYMENT" -> {
+            case "DEPOSIT" -> {
                 if (!"ESTIMATED".equals(reservationStatus)) {
                     throw new ReservationInvalidStatusException("견적이 도착한 이후에 결제를 진행할 수 있습니다.");
                 }
@@ -250,6 +262,7 @@ public class PaymentService {
                 if (!"CONFIRMED".equals(reservationStatus)) {
                     throw new ReservationInvalidStatusException("계약금 결제 완료 이후에 잔금 결제를 진행할 수 있습니다.");
                 }
+                validateBalancePaymentDeadline(info);
             }
             default -> throw new PaymentTypeInvalidException("지원하지 않는 결제 타입입니다.");
         }
@@ -264,7 +277,6 @@ public class PaymentService {
 
         return switch (paymentType) {
             case "DEPOSIT" -> payableAmount / 10;
-            case "FULL_PAYMENT" -> payableAmount;
             case "BALANCE" -> calculateBalanceAmount(info.getReservationId(), payableAmount);
             default -> throw new PaymentTypeInvalidException("지원하지 않는 결제 타입입니다.");
         };
@@ -295,7 +307,6 @@ public class PaymentService {
         return switch (paymentType) {
             case "DEPOSIT" -> "상다리 계약금 결제 #" + reservationId;
             case "BALANCE" -> "상다리 잔금 결제 #" + reservationId;
-            case "FULL_PAYMENT" -> "상다리 전액 결제 #" + reservationId;
             default -> "상다리 결제 #" + reservationId;
         };
     }
@@ -303,14 +314,122 @@ public class PaymentService {
     private String getNextReservationStatus(String paymentType) {
         return switch (paymentType) {
             case "DEPOSIT" -> "CONFIRMED";
-            case "BALANCE", "FULL_PAYMENT" -> "PAYMENT_COMPLETED";
+            case "BALANCE" -> "PAYMENT_COMPLETED";
             default -> throw new PaymentTypeInvalidException("지원하지 않는 결제 타입입니다.");
         };
     }
 
+    private String getCurrentReservationStatus(String paymentType) {
+        return switch (paymentType) {
+            case "DEPOSIT" -> "ESTIMATED";
+            case "BALANCE" -> "CONFIRMED";
+            default -> throw new PaymentTypeInvalidException("지원하지 않는 결제 타입입니다.");
+        };
+    }
+
+    private void validatePaymentOwner(Long loginUserId, Long ownerUserId) {
+        if (loginUserId == null) {
+            throw new AuthLoginRequiredException();
+        }
+
+        if (!Objects.equals(loginUserId, ownerUserId)) {
+            throw new ReservationOwnerMismatchException("본인의 예약 결제만 진행할 수 있습니다.");
+        }
+    }
+
+    private PaymentReadyInfo findCurrentReadyInfo(Payment payment) {
+        PaymentReadyInfo info = paymentMapper.findPaymentReadyInfoForUpdate(payment.getReservationId());
+
+        if (info == null) {
+            throw new ReservationNotFoundException("결제 가능한 예약 정보를 찾을 수 없습니다.");
+        }
+
+        return info;
+    }
+
+    private void validateBalancePaymentDeadline(PaymentReadyInfo info) {
+        LocalDate eventDate = parseEventDate(info.getEventStartDate());
+        LocalDate paymentDeadline = minusBusinessDays(eventDate, 5);
+        LocalDate today = LocalDate.now(KOREA_ZONE_ID);
+
+        if (today.isAfter(paymentDeadline)) {
+            throw new ReservationInvalidStatusException("잔금 결제 마감일이 지나 결제를 진행할 수 없습니다.");
+        }
+    }
+
+    private LocalDate parseEventDate(String eventStartDate) {
+        if (eventStartDate == null || eventStartDate.isBlank()) {
+            throw new ReservationPaymentInfoNotFoundException("행사 일정 정보를 찾을 수 없습니다.");
+        }
+
+        try {
+            return LocalDateTime.parse(eventStartDate, DATE_TIME_FORMATTER).toLocalDate();
+        } catch (DateTimeParseException ignored) {
+            if (eventStartDate.length() < 10) {
+                throw new ReservationPaymentInfoNotFoundException("행사 일정 정보가 올바르지 않습니다.");
+            }
+
+            return LocalDate.parse(eventStartDate.substring(0, 10));
+        }
+    }
+
+    private LocalDate minusBusinessDays(LocalDate date, int businessDays) {
+        LocalDate cursor = date;
+        int remainingDays = businessDays;
+
+        while (remainingDays > 0) {
+            cursor = cursor.minusDays(1);
+
+            if (isBusinessDay(cursor)) {
+                remainingDays--;
+            }
+        }
+
+        return cursor;
+    }
+
+    private boolean isBusinessDay(LocalDate date) {
+        DayOfWeek dayOfWeek = date.getDayOfWeek();
+        return dayOfWeek != DayOfWeek.SATURDAY && dayOfWeek != DayOfWeek.SUNDAY;
+    }
+
+    private PaymentReadyResponse toReadyResponse(Payment payment, PaymentReadyInfo info) {
+        List<PaymentReadyMenuResponse> menus = paymentMapper.findMenusByReservationId(info.getReservationId());
+
+        return new PaymentReadyResponse(
+                payment.getPaymentId(),
+                payment.getOrderId(),
+                payment.getOrderName(),
+                payment.getTotalAmount(),
+                payment.getPaymentType(),
+                info.getCustomerName(),
+                info.getCustomerEmail(),
+                info.getReservationId(),
+                info.getStoreName(),
+                info.getEventStartDate(),
+                info.getEventEndDate(),
+                formatEventLocation(info),
+                info.getQuotedPrice(),
+                info.getPayableAmount(),
+                menus
+        );
+    }
+
+    private String formatEventLocation(PaymentReadyInfo info) {
+        if (info.getAddrBase() == null || info.getAddrBase().isBlank()) {
+            return info.getAddrDetail();
+        }
+
+        if (info.getAddrDetail() == null || info.getAddrDetail().isBlank()) {
+            return info.getAddrBase();
+        }
+
+        return info.getAddrBase() + " " + info.getAddrDetail();
+    }
+
     private String nowString() {
         return LocalDateTime.now()
-                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                .format(DATE_TIME_FORMATTER);
     }
 
     private PaymentConfirmResponse toConfirmResponse(Payment payment) {

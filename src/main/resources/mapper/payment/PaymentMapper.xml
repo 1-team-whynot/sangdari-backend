@@ -10,9 +10,22 @@
         <result column="reservation_status" property="reservationStatus"/>
         <result column="customer_name" property="customerName"/>
         <result column="customer_email" property="customerEmail"/>
+        <result column="store_name" property="storeName"/>
+        <result column="event_start_date" property="eventStartDate"/>
+        <result column="event_end_date" property="eventEndDate"/>
+        <result column="addr_base" property="addrBase"/>
+        <result column="addr_detail" property="addrDetail"/>
         <result column="quoted_price" property="quotedPrice"/>
         <result column="discount_price" property="discountPrice"/>
         <result column="payable_amount" property="payableAmount"/>
+    </resultMap>
+
+    <resultMap id="PaymentReadyMenuResponseMap" type="com.sangdari.domain.payment.responses.PaymentReadyMenuResponse">
+        <id column="menu_id" property="menuId"/>
+        <result column="name" property="name"/>
+        <result column="description" property="description"/>
+        <result column="price" property="price"/>
+        <result column="image_url" property="imageUrl"/>
     </resultMap>
 
     <resultMap id="PaymentResultMap" type="com.sangdari.domain.payment.entities.Payment">
@@ -56,17 +69,40 @@
             r.status AS reservation_status,
             u.name AS customer_name,
             u.email AS customer_email,
+            s.business_name AS store_name,
+            r.event_start_date,
+            r.event_end_date,
+            r.addr_base,
+            r.addr_detail,
             r.quoted_price,
             r.discount_price,
             COALESCE(NULLIF(r.discount_price, 0), r.quoted_price) AS payable_amount
         FROM reservations r
                 JOIN users u
                 ON r.user_id = u.user_id
+                JOIN stores s
+                ON r.store_id = s.store_id
         WHERE
             r.reservation_id = #{reservationId}
             AND r.deleted_at IS NULL
             AND u.deleted_at IS NULL
+            AND s.deleted_at IS NULL
         FOR UPDATE
+    </select>
+
+    <select id="findMenusByReservationId" resultMap="PaymentReadyMenuResponseMap">
+        SELECT
+            m.menu_id,
+            m.name,
+            m.description,
+            m.price,
+            m.image_url
+        FROM reservation_menus rm
+             INNER JOIN menus m ON rm.menu_id = m.menu_id
+        WHERE rm.reservation_id = #{reservationId}
+          AND rm.deleted_at IS NULL
+          AND m.deleted_at IS NULL
+        ORDER BY m.menu_id
     </select>
 
     <select id="existsDonePayment" resultType="boolean">
@@ -181,6 +217,7 @@
             status = #{status},
             updated_at = NOW()
         WHERE reservation_id = #{reservationId}
+          AND status = #{currentStatus}
           AND deleted_at IS NULL
     </update>
 

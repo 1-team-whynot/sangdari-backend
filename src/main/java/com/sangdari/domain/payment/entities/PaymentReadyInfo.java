@@ -15,6 +15,12 @@ public class PaymentReadyInfo {
     private String customerName;
     private String customerEmail;
 
+    private String storeName;
+    private String eventStartDate;
+    private String eventEndDate;
+    private String addrBase;
+    private String addrDetail;
+
     private Long quotedPrice;
     private Long discountPrice;
 
