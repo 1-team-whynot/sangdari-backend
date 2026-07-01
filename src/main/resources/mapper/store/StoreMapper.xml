@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.sangdari.domain.store.mapper.StoreMapper">
+
+    <!-- GROUP_CONCAT: 카테고리명들을 담은 문자열(ex "카페,식당")로 반환 -->
+    <select id="getAllStores" resultType="com.sangdari.domain.store.responses.StoreItems">
+        SELECT
+            s.store_id,
+            s.image_url,
+            s.business_name,
+            s.store_desc,
+            s.addr_base,
+            s.min_headcount,
+            s.max_headcount,
+            s.is_battery_supported,
+            GROUP_CONCAT(fc.name ORDER BY fc.name SEPARATOR ',') as food_category_names
+        FROM stores s
+             INNER JOIN store_food_categories sfc ON s.store_id = sfc.store_id
+             INNER JOIN food_categories fc ON sfc.food_category_id = fc.food_category_id
+        WHERE s.store_id NOT IN (
+            SELECT r.store_id
+            FROM reservations r
+            WHERE r.deleted_at IS NULL
+              AND r.status IN (
+                  'CONFIRMED',
+                  'PAYMENT_COMPLETED',
+                  'COMPLETED'
+              )
+        )
+        GROUP BY s.store_id
+        ORDER BY s.store_id DESC
+        LIMIT #{allStoreListReq.limit} OFFSET #{offset}
+    </select>
+
+    <select id="getTotalStoreCount" resultType="long">
+        SELECT COUNT(*)
+        FROM stores s
+        WHERE s.store_id NOT IN (
+            SELECT r.store_id
+            FROM reservations r
+            WHERE r.deleted_at IS NULL
+              AND r.status IN (
+                  'CONFIRMED',
+                  'PAYMENT_COMPLETED',
+                  'COMPLETED'
+              )
+        )
+    </select>
+
+    <!-- GROUP_CONCAT: 카테고리명들을 담은 문자열(ex "카페,식당")로 반환 -->
+    <select id="getFilteredStores" resultType="com.sangdari.domain.store.responses.StoreItems">
+        SELECT
+        s.store_id,
+        s.image_url,
+        s.business_name,
+        s.store_desc,
+        s.addr_base,
+        s.min_headcount,
+        s.max_headcount,
+        s.is_battery_supported,
+        GROUP_CONCAT(fc.name SEPARATOR ',') as food_category_names
+        FROM stores s
+        INNER JOIN store_food_categories sfc ON s.store_id = sfc.store_id
+        INNER JOIN food_categories fc ON sfc.food_category_id = fc.food_category_id
+        INNER JOIN store_regions sr ON s.store_id = sr.store_id
+        <where>
+            <if test="storeListReq.regionId != null">
+                AND sr.region_id = #{storeListReq.regionId}
+            </if>
+
+            <if test="storeListReq.eventStartDate != null and storeListReq.eventStartDate != '' and storeListReq.eventEndDate != null and storeListReq.eventEndDate != ''">
+                AND s.store_id NOT IN (
+                SELECT r.store_id
+                FROM reservations r
+                WHERE r.deleted_at IS NULL
+                AND DATE(r.event_start_date) &lt;= #{storeListReq.eventEndDate}
+                AND DATE(r.event_end_date) &gt;= #{storeListReq.eventStartDate}
+                AND r.status IN (
+                'CONFIRMED',
+                'PAYMENT_COMPLETED',
+                'COMPLETED'
+                )
+                )
+            </if>
+
+            <if test="storeListReq.minHeadcount != null">
+                AND s.min_headcount &lt;= #{storeListReq.minHeadcount}
+            </if>
+            <if test="storeListReq.maxHeadcount != null">
+                AND s.max_headcount &gt;= #{storeListReq.maxHeadcount}
+            </if>
+
+            <if test="storeListReq.isPowerAvailable != null and storeListReq.isPowerAvailable == false">
+                AND s.is_battery_supported = 1
+            </if>
+
+            <if test="storeListReq.selectedCategories != null and storeListReq.selectedCategories.size() > 0">
+                AND fc.name IN
+                <foreach collection="storeListReq.selectedCategories" item="categoryName" open="(" separator="," close=")">
+                    #{categoryName}
+                </foreach>
+            </if>
+        </where>
+        GROUP BY s.store_id
+        ORDER BY s.store_id DESC
+        LIMIT #{storeListReq.limit} OFFSET #{offset}
+    </select>
+
+    <select id="countStores" parameterType="StoreListReq" resultType="long">
+        SELECT COUNT(DISTINCT  s.store_id)
+        FROM stores s
+                 INNER JOIN store_food_categories sfc ON s.store_id = sfc.store_id
+                 INNER JOIN food_categories fc ON sfc.food_category_id = fc.food_category_id
+                 INNER JOIN store_regions sr ON s.store_id = sr.store_id
+        <where>
+            <if test="storeListReq.regionId != null">
+                AND sr.region_id = #{storeListReq.regionId}
+            </if>
+
+            <if test="storeListReq.eventStartDate != null and storeListReq.eventStartDate != '' and storeListReq.eventEndDate != null and storeListReq.eventEndDate != ''">
+                AND s.store_id NOT IN (
+                SELECT r.store_id
+                FROM reservations r
+                WHERE r.deleted_at IS NULL
+                AND DATE(r.event_start_date) &lt;= #{storeListReq.eventEndDate}
+                AND DATE(r.event_end_date) &gt;= #{storeListReq.eventStartDate}
+                AND r.status IN (
+                'CONFIRMED',
+                'PAYMENT_COMPLETED',
+                'COMPLETED'
+                )
+                )
+            </if>
+
+            <if test="storeListReq.minHeadcount != null">
+                AND s.min_headcount &lt;= #{storeListReq.minHeadcount}
+            </if>
+            <if test="storeListReq.maxHeadcount != null">
+                AND s.max_headcount &gt;= #{storeListReq.maxHeadcount}
+            </if>
+
+            <if test="storeListReq.isPowerAvailable != null and storeListReq.isPowerAvailable == false">
+                AND s.is_battery_supported = 1
+            </if>
+
+            <if test="storeListReq.selectedCategories != null and storeListReq.selectedCategories.size() > 0">
+                AND fc.name IN
+                <foreach collection="storeListReq.selectedCategories" item="categoryName" open="(" separator="," close=")">
+                    #{categoryName}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="getStoreDetail" resultType="com.sangdari.domain.store.responses.StoreDetailItems">
+        SELECT
+            s.store_id,
+            s.image_url,
+            s.business_name,
+            o.business_number
+        FROM stores s
+             INNER JOIN owners o ON s.owner_id = o.owner_id
+        WHERE s.store_id = #{storeId}
+          AND s.deleted_at IS NULL
+          AND o.deleted_at IS NULL
+          AND o.withdraw_at IS NULL
+    </select>
+
+    <select id="getStoreMenus" resultType="com.sangdari.domain.store.responses.StoreMenuItems">
+        SELECT
+            m.menu_id,
+            m.name,
+            m.description,
+            m.price,
+            m.image_url
+        FROM menus m
+        WHERE m.store_id = #{storeId}
+          AND m.deleted_at IS NULL
+        ORDER BY m.menu_id
+    </select>
+</mapper>

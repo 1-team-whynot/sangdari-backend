@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.sangdari.domain.reservation.mapper.ReservationCreateMapper">
+    <select id="existsActiveUserById" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM users
+            WHERE user_id = #{userId}
+              AND deleted_at IS NULL
+              AND withdraw_at IS NULL
+        )
+    </select>
+
+    <select id="findStoreForReservation" resultType="com.sangdari.domain.reservation.entities.ReservationStore">
+        SELECT
+            s.store_id,
+            s.image_url,
+            s.business_name,
+            o.business_number,
+            s.is_battery_supported AS battery_supported
+        FROM stores s
+             INNER JOIN owners o ON s.owner_id = o.owner_id
+        WHERE s.store_id = #{storeId}
+          AND s.deleted_at IS NULL
+          AND o.deleted_at IS NULL
+          AND o.withdraw_at IS NULL
+    </select>
+
+    <select id="existsReservedStoreInPeriod" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM reservations r
+            WHERE r.store_id = #{storeId}
+              AND r.deleted_at IS NULL
+              AND r.event_start_date &lt;= #{eventEndDate}
+              AND r.event_end_date &gt;= #{eventStartDate}
+              AND r.status IN (
+                  'CONFIRMED',
+                  'PAYMENT_COMPLETED',
+                  'COMPLETED'
+              )
+        )
+    </select>
+
+    <select id="findActiveMenusByStoreId" resultType="com.sangdari.domain.reservation.responses.ReservationMenuResponse">
+        SELECT
+            m.menu_id,
+            m.name,
+            m.description,
+            m.price,
+            m.image_url
+        FROM menus m
+        WHERE m.store_id = #{storeId}
+          AND m.deleted_at IS NULL
+          AND m.menu_id IN
+          <foreach collection="menuIds" item="menuId" open="(" separator="," close=")">
+              #{menuId}
+          </foreach>
+        ORDER BY m.menu_id
+    </select>
+
+    <insert id="insert"
+            parameterType="com.sangdari.domain.reservation.entities.Reservation"
+            useGeneratedKeys="true"
+            keyProperty="reservationId"
+            keyColumn="reservation_id">
+        INSERT INTO reservations (
+            user_id,
+            store_id,
+            addr_base,
+            addr_detail,
+            event_start_date,
+            event_end_date,
+            headcount,
+            is_power_available,
+            request_memo,
+            status
+        ) VALUES (
+            #{userId},
+            #{storeId},
+            #{addrBase},
+            #{addrDetail},
+            #{eventStartDate},
+            #{eventEndDate},
+            #{headcount},
+            #{powerAvailable},
+            #{requestMemo},
+            #{status}
+        )
+    </insert>
+</mapper>

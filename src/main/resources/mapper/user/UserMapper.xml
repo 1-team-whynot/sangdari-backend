@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sangdari.domain.user.mapper.UserMapper">
+    <resultMap id="userResultMap" type="com.sangdari.domain.user.entities.User">
+        <id column="user_id" property="userId" />
+        <result column="email" property="email" />
+        <result column="password" property="password" />
+        <result column="name" property="name" />
+        <result column="phone" property="phone" />
+        <result column="refresh_token" property="refreshToken" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+        <result column="deleted_at" property="deletedAt" />
+        <result column="withdraw_at" property="withdrawAt" />
+    </resultMap>
+
+    <select id="findByPk" resultMap="userResultMap">
+        SELECT
+            *
+        FROM users
+        WHERE
+                user_id = #{userId}
+            AND deleted_at IS NULL
+    </select>
+
+    <select id="findByEmail" resultMap="userResultMap">
+        SELECT
+            *
+        FROM users
+        WHERE
+                email = #{email}
+            AND deleted_at IS NULL
+    </select>
+
+    <select id="findByPhone" resultMap="userResultMap">
+        SELECT
+            *
+        FROM users
+        WHERE
+                phone = #{phone}
+            AND deleted_at IS NULL
+    </select>
+
+    <update id="updateUserInfo">
+        UPDATE users
+        SET
+            name = #{name}
+            , phone = #{phone}
+            , updated_at = CURRENT_TIMESTAMP
+        WHERE
+                user_id = #{userId}
+            AND deleted_at IS NULL
+    </update>
+
+    <select id="findByEmailAndNameAndPhone" resultType="com.sangdari.domain.user.entities.User">
+        SELECT
+            *
+        FROM users
+        WHERE
+                email = #{email}
+            AND name = #{name}
+            AND phone = #{phone}
+            AND deleted_at IS NULL
+    </select>
+
+    <update id="updateUserPassword">
+        UPDATE users
+        SET
+            password = #{password}
+            , updated_at = CURRENT_TIMESTAMP
+        WHERE
+                user_id = #{userId}
+            AND deleted_at IS NULL
+    </update>
+
+    <update id="withdrawUser">
+        UPDATE users
+        SET
+            deleted_at = CURRENT_TIMESTAMP
+            , withdraw_at = CURRENT_TIMESTAMP
+            , refresh_token = NULL
+        WHERE
+                user_id = #{userId}
+            AND deleted_at IS NULL
+    </update>
+</mapper>

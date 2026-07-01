@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.sangdari.domain.reservation.mapper.ReservationQueryMapper">
+    <resultMap id="ReservationMyItemResponseMap"
+               type="com.sangdari.domain.reservation.responses.ReservationMyItemResponse">
+        <id column="reservation_id" property="reservationId"/>
+        <result column="status" property="status"/>
+        <result column="store_id" property="storeId"/>
+        <result column="business_name" property="businessName"/>
+        <result column="image_url" property="imageUrl"/>
+        <result column="addr_base" property="addrBase"/>
+        <result column="addr_detail" property="addrDetail"/>
+        <result column="event_start_date" property="eventStartDate"/>
+        <result column="event_end_date" property="eventEndDate"/>
+        <result column="headcount" property="headcount"/>
+        <result column="is_power_available" property="powerAvailable"/>
+        <result column="request_memo" property="requestMemo"/>
+        <result column="quoted_price" property="quotedPrice"/>
+        <result column="discount_price" property="discountPrice"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <resultMap id="ReservationMyMenuResponseMap"
+               type="com.sangdari.domain.reservation.responses.ReservationMyMenuResponse">
+        <id column="menu_id" property="menuId"/>
+        <result column="reservation_id" property="reservationId"/>
+        <result column="name" property="name"/>
+        <result column="description" property="description"/>
+        <result column="price" property="price"/>
+        <result column="image_url" property="imageUrl"/>
+    </resultMap>
+
+    <select id="countMyReservations" resultType="long">
+        SELECT COUNT(*)
+        FROM reservations r
+             INNER JOIN stores s ON r.store_id = s.store_id
+        WHERE r.user_id = #{userId}
+          AND r.deleted_at IS NULL
+          AND s.deleted_at IS NULL
+        <if test="status != null">
+          AND r.status = #{status}
+        </if>
+    </select>
+
+    <select id="findMyReservations" resultMap="ReservationMyItemResponseMap">
+        SELECT
+            r.reservation_id,
+            r.status,
+            r.store_id,
+            s.business_name,
+            s.image_url,
+            r.addr_base,
+            r.addr_detail,
+            r.event_start_date,
+            r.event_end_date,
+            r.headcount,
+            r.is_power_available,
+            r.request_memo,
+            r.quoted_price,
+            r.discount_price,
+            r.created_at
+        FROM reservations r
+             INNER JOIN stores s ON r.store_id = s.store_id
+        WHERE r.user_id = #{userId}
+          AND r.deleted_at IS NULL
+          AND s.deleted_at IS NULL
+        <if test="status != null">
+          AND r.status = #{status}
+        </if>
+        ORDER BY r.reservation_id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findMenusByReservationIds" resultMap="ReservationMyMenuResponseMap">
+        SELECT
+            rm.reservation_id,
+            m.menu_id,
+            m.name,
+            m.description,
+            m.price,
+            m.image_url
+        FROM reservation_menus rm
+             INNER JOIN menus m ON rm.menu_id = m.menu_id
+        WHERE rm.reservation_id IN
+        <foreach collection="reservationIds" item="reservationId" open="(" separator="," close=")">
+            #{reservationId}
+        </foreach>
+          AND rm.deleted_at IS NULL
+          AND m.deleted_at IS NULL
+        ORDER BY rm.reservation_id DESC, m.menu_id
+    </select>
+</mapper>
