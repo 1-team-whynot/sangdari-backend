@@ -44,7 +44,7 @@ public class AuthService {
         }
 
         if(!passwordEncoder.matches(loginRequest.password(), user.getPassword())) {
-            throw new AuthLoginFailedException();
+            throw new UserInvalidPasswordException();
         }
 
         return this.generateAuthentication(response, user);
